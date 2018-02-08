@@ -7,7 +7,7 @@ maintainer:          "liuenze6516@gmail.com"
 copyright:           "Copyright: (c) 2016 Enzo Liu"
 
 extra-source-files:
-- README.md
+- README.org
 - ChangeLog.md
 
 # Metadata used when publishing your package
@@ -21,6 +21,8 @@ description:         Please see the README on Github at <https://github.com/Enzo
 
 dependencies:
 - base >= 4.7 && < 5
+- bytestring
+- parsec
 
 library:
   source-dirs: src
