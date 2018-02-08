@@ -10,7 +10,7 @@ import           Text.Parsec.ByteString
 
 
 lexer :: ByteString -> SExpr
-lexer = undefined
+lexer bs = runParser sexpr bs
 
 ident :: Parser ByteString
 ident = BS.pack <$> ((:) <$> letter <*> many alphaNum)
@@ -24,4 +24,8 @@ atom = parseN <|> parseIdent
         parseIdent = I <$> ident
 
 sexpr :: Parser SExpr
-sexpr = fmap A atom <|> fmap Comb (many sexpr)
+sexpr = withSpaces (parseAtom <|> parseComb)
+  where parseAtom = A <$> atom
+        parseComb = between (char '(') (char ')') (Comb <$> many1 sexpr)
+        withSpaces :: Parser a -> Parser a
+        withSpaces p = spaces *> p <* spaces
