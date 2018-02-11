@@ -13,13 +13,17 @@ import           LLVM.Module
 import           LLVM.Target
 
 import           Data.ByteString.Char8      as BS
+import Data.Char
 
 term = Do $ Ret Nothing []
-ret1 = Do $ Ret (Just $ ConstantOperand $ C.Int 32 1) []
+ret1 = Do $ Ret (Just $ ConstantOperand $ C.Int 32 0) []
+
+ascii :: Char -> C.Constant
+ascii = C.Int 32 . toInteger . ord
 
 printFunc = functionDefaults {
   returnType = AST.VoidType,
-  name = "print",
+  name = "putchar",
   basicBlocks = []
 }
 
@@ -32,8 +36,8 @@ callPrint = Do $ Call
   CC.C
   []
   -- (Right $ ConstantOperand (C.GlobalReference printType (mkName "print")))
-  (Right $ ConstantOperand (C.GlobalReference (ptr printType) (mkName "print")))
-  []
+  (Right $ ConstantOperand (C.GlobalReference (ptr printType) (mkName "putchar")))
+  [(ConstantOperand $ ascii 'a', [])]
   []
   []
 
@@ -57,7 +61,8 @@ mtf m fp = withContext $ \context ->
   withModuleFromAST context m $ \mod -> do
     res <- moduleLLVMAssembly mod
     BS.putStrLn res
-    --withHostTargetMachine $ \tm ->
-    --  writeTargetAssemblyToFile tm (File fp) mod
+    withHostTargetMachine $ \tm -> do
+      -- writeLLVMAssemblyToFile (File fp) mod
+      writeTargetAssemblyToFile tm (File fp) mod
 
-main = mtf slangModule "/tmp/test.ll"
+main = mtf slangModule "/tmp/test.s"
