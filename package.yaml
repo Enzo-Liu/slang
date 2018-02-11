@@ -23,6 +23,10 @@ dependencies:
 - base >= 4.7 && < 5
 - bytestring
 - parsec
+- llvm-hs
+- llvm-hs-pretty
+- llvm-hs-pure
+- text
 
 library:
   source-dirs: src

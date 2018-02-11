@@ -9,8 +9,8 @@ import           Text.Parsec.ByteString
 
 
 
-lexer :: ByteString -> SExpr
-lexer bs = runParser sexpr bs
+lexer :: ByteString -> Either ParseError SExpr
+lexer = runParser sexpr () "slang lexer"
 
 ident :: Parser ByteString
 ident = BS.pack <$> ((:) <$> letter <*> many alphaNum)
