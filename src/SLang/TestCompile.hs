@@ -117,5 +117,6 @@ mtf m fp = withContext $ \context ->
     withHostTargetMachine $ \tm -> do
       -- writeLLVMAssemblyToFile (File fp) mod
       writeTargetAssemblyToFile tm (File fp) mod
+      -- writeObjectToFile tm (File fp) mod
 
 main = mtf slangModule "/tmp/test.s"
