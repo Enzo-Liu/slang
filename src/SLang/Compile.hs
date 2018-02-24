@@ -4,13 +4,12 @@ module SLang.Compile where
 
 import           SLang.CodeGen
 import           SLang.Expr
-import           SLang.Syntax
 
 import           Control.Monad         hiding (void)
 
 
 import qualified Data.ByteString.Char8 as BSC
-import           Data.ByteString.Short (unpack)
+import           Data.Text (unpack)
 import           Data.Char             (ord)
 import qualified LLVM.AST              as AST
 import qualified LLVM.AST.Constant     as C
@@ -20,34 +19,52 @@ import qualified LLVM.AST.Type         as T
 import           LLVM.Context
 import           LLVM.Module
 
-codeGen :: Syntax -> LLVM ()
-codeGen _ = undefined
+toSig :: [Name] -> [(AST.Type, AST.Name)]
+toSig = map (\x -> (double, AST.Name x))
 
-cgen :: Syntax -> Codegen AST.Operand
+codegenTop :: Expr -> LLVM ()
+codegenTop (Function name args body) = do
+  define double name largs bls
+  where
+    largs = map (\x -> (double, AST.Name x)) args
+    bls _ = do
+      forM_ args $ \a -> do
+        var <- alloca double
+        store var (local void (AST.Name a))
+        assign a var
+      cgen body >>= ret
+
+codegenTop (Extern name args) = do
+  external double name fnargs
+  where fnargs = toSig args
+
+codegenTop exp = define void "main" [] bls
+  where bls _ = cgen exp >>= ret
+
+cgen :: Expr -> Codegen AST.Operand
 cgen (Call fn args) = do
   let fname = AST.Name fn
       fntype = T.ptr (T.FunctionType void [T.ptr T.i8] False)
   largs <- mapM cgen args
   call (externf fntype fname) largs
 
-cgen (Const cs) = return $ cons $ C.Array T.i8 (map stc (unpack cs))
-  where stc = C.Int 8 . toInteger
+cgen (Str cs) = return $ cons $ C.Array T.i8 (map stc (unpack cs))
+  where stc = C.Int 8 . toInteger . ord
 
 cgen (Var x) = return $ cons $ C.GetElementPtr True (C.GlobalReference (T.ptr $ T.ArrayType 5 T.i8) (AST.Name x)) [C.Int 32 0, C.Int 32 0]
 
 cgen _ = undefined
 
 main = withContext $ \context -> do
-  -- print newast
   withModuleFromAST context newast $ \m -> do
     llstr <- moduleLLVMAssembly m
     BSC.putStrLn llstr
-    return newast
+    return ()
   where
     newast = runLLVM (emptyModule "test") $ do
       addDefn $ AST.GlobalDefinition $ G.globalVariableDefaults {
-          G.name  = (AST.Name "t")
-        , G.type' = (T.ArrayType 5 T.i8)
+          G.name  = AST.Name "t"
+        , G.type' = T.ArrayType 5 T.i8
         , G.isConstant = True
         , G.initializer = Just (C.Array T.i8
                                 (map (C.Int 8 . toInteger . ord) "test\0") )
@@ -55,10 +72,18 @@ main = withContext $ \context -> do
       external void "puts" [(T.ptr T.i8, AST.UnName 1)]
       define T.i32 "main" [] genBlock
 
-genBlock :: T.Type -> Codegen (AST.Named AST.Terminator)
-genBlock _ = do
+puts :: Name -> Codegen ()
+puts n = do
   let fname = AST.Name "puts"
       fntype = T.ptr (T.FunctionType void [T.ptr T.i8] False)
-  largs <- mapM cgen [Var "t"]
+  largs <- mapM cgen [Var n]
   voidcall (externf fntype fname) largs
+
+genBlock :: T.Type -> Codegen (AST.Named AST.Terminator)
+genBlock _ = do
+  puts "t"
   ret $ cons (C.Int 32 0)
+
+-- source:
+-- (external puts (char*))
+-- (puts "sdf")
