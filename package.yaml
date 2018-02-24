@@ -26,6 +26,8 @@ dependencies:
 - llvm-hs
 - llvm-hs-pretty
 - llvm-hs-pure
+- containers
+- mtl
 - text
 
 library:
