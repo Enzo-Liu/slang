@@ -50,8 +50,8 @@ compileConstant (SLAInt int) = IR.int32 $ fromIntegral int
 compileConstant _            = undefined
 
 compielFunc' ::IR.MonadIRBuilder m => T.Text -> [Operand] -> m Operand
-compielFunc' "+" [op1, op2]= IR.add op1 op2
-compielFunc' "-" [op1, op2]= IR.sub op1 op2
-compielFunc' "*" [op1, op2]= IR.mul op1 op2
-compielFunc' "/" [op1, op2]= IR.udiv op1 op2
+compielFunc' "+" (op1:ops) = foldM IR.add op1 ops
+compielFunc' "-" (op1:ops) = foldM IR.sub op1 ops
+compielFunc' "*" (op1:ops) = foldM IR.mul op1 ops
+compielFunc' "/" (op1:ops) = foldM IR.udiv op1 ops
 compielFunc' _ _ = error "not implemented"
