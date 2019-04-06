@@ -1,6 +1,7 @@
 * slang
-  
+
 ** step one
 - [X] finish simple s-expression parser
-- [ ] add arithmetic(such as `+`, `-`, `*`, `/`) support 
+- [ ] add arithmetic(such as `+`, `-`, `*`, `/`) support
+  - run `/usr/local/Cellar/llvm-8/8.0.0/bin/lli-8 ./sl-data/test.ll` to see the return code...
 - [ ] compile to llvm

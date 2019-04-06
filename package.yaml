@@ -42,7 +42,9 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - slang
+    - llvm-hs-pure
     - llvm-hs
+    - directory
 
 tests:
   sl-text:

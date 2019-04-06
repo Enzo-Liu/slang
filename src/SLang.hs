@@ -1,9 +1,18 @@
+{-# LANGUAGE OverloadedStrings #-}
 module SLang where
 
-import qualified Data.Text as T
-import Text.Parsec.Text
-import Text.Parsec
-import qualified Text.Parsec.Number as PN
+import           Control.Monad
+import qualified Data.Text                  as T
+import           LLVM.AST
+import           LLVM.AST.Type
+import           Text.Parsec
+import qualified Text.Parsec.Number         as PN
+import           Text.Parsec.Text
+
+import qualified LLVM.IRBuilder.Constant    as LLVMIR
+import qualified LLVM.IRBuilder.Instruction as LLVMIR
+import qualified LLVM.IRBuilder.Module      as LLVMIR
+import qualified LLVM.IRBuilder.Monad       as LLVMIR
 
 data SLAtom = SLASymbol T.Text
   | SLString T.Text
@@ -18,17 +27,30 @@ parse :: String -> T.Text -> SLExpr
 parse fname input = let res = runParser slExpr () fname input
                         in case res of
                              Left err -> error (show err)
-                             Right r -> r
+                             Right r  -> r
 
-compile :: SLExpr -> String
-compile (SLExpr exprs) = compileFunc exprs
-compile (SLAtom atom) = compileConstant atom
+compile :: SLExpr -> Module
+compile expr = LLVMIR.buildModule "slang.ll" $ compile' expr
 
-compileFunc :: [SLExpr] -> String
-compileFunc = undefined
+compile' :: LLVMIR.MonadModuleBuilder m => SLExpr -> m Operand
+compile' (SLExpr exprs) = compileFunc exprs
+compile' (SLAtom atom)  = compileConstant atom
 
-compileConstant :: SLAtom -> String
-compileConstant = undefined
+compileFunc :: LLVMIR.MonadModuleBuilder m => [SLExpr] -> m Operand
+compileFunc (SLAtom (SLASymbol "+"):args) = do
+  unless (length args == 2) (error "wrong number of arguments")
+  ops <- mapM compile' args
+  let op1 = head ops
+      op2 = ops !! 1
+  LLVMIR.function "main" [] i32 $ \_ -> do
+    op <- LLVMIR.add op1 op2
+    LLVMIR.ret op
+compileFunc (SLAtom (SLASymbol "-"):args) = undefined
+compileFunc _ = undefined
+
+compileConstant :: LLVMIR.MonadModuleBuilder m => SLAtom -> m Operand
+compileConstant (SLAInt int) = LLVMIR.int32 $ fromIntegral int
+compileConstant _ = undefined
 
 slAInt :: Parser SLAtom
 slAInt = SLAInt <$> PN.int
