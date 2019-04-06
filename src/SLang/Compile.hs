@@ -17,14 +17,18 @@ import qualified LLVM.IRBuilder.Module      as IR
 import qualified LLVM.IRBuilder.Monad       as IR
 
 
-compile :: SLExpr -> Module
-compile expr = IR.buildModule "slang.ll" $ mdo
+compile :: SLProgram -> Module
+compile (SLProgram exprs) = IR.buildModule "slang.ll" $ mdo
   printf <- IR.extern "printf" [ptr i8, i32] AST.void
   putInt32 <- IR.function "putInt32" [(i32, "a")] AST.void $ \ops ->
     putsInt printf (head ops)
+  let defs = filter isDef exprs
+      instructions = filter (not . isDef) exprs
   IR.function "main" [] i32 $ \_ -> do
-    op <- compile' expr
-    _ <- IR.call putInt32 [(op, [])]
+    mapM_ (\expr ->
+             compile' expr >>=
+             (\op -> IR.call putInt32 [(op, [])]))
+      instructions
     ret <- IR.int32 0
     IR.ret ret
 
@@ -35,7 +39,7 @@ compile' (SLAtom atom)  = compileConstant atom
 putsInt :: (IR.MonadModuleBuilder m, IR.MonadIRBuilder m) => Operand -> Operand -> m ()
 putsInt printf op = do
   -- "%d" = 37,100 = 00100101,01100100 = 9572 = 37 << 8 + 100
-  intFormat <- IR.globalStringPtr "%d" "intFormat"
+  intFormat <- IR.globalStringPtr "%d\n" "intFormat"
   _ <- IR.call printf [(intFormat, []), (op,[])]
   IR.retVoid
 

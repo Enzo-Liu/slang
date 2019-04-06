@@ -11,8 +11,8 @@ import           Text.Parsec.Text
 slAInt :: Parser SLAtom
 slAInt = SLAInt <$> PN.int
 
-parse :: String -> T.Text -> SLExpr
-parse fname input = let res = runParser slExpr () fname input
+parse :: String -> T.Text -> SLProgram
+parse fname input = let res = runParser slProg () fname input
                         in case res of
                              Left err -> error (show err)
                              Right r  -> r
@@ -59,3 +59,6 @@ slExpr = withSpaces $ slExprComposite <|> SLAtom <$> slAtom
   where
     withSpaces :: Parser SLExpr -> Parser SLExpr
     withSpaces expr = spaces *> expr <* spaces
+
+slProg :: Parser SLProgram
+slProg = SLProgram <$> many1 slExpr

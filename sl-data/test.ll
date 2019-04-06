@@ -1,12 +1,12 @@
 ; ModuleID = 'slang.ll'
 source_filename = "<string>"
 
-@intFormat = unnamed_addr constant [3 x i8] c"%d\00"
+@intFormat = unnamed_addr constant [4 x i8] c"%d\0A\00"
 
 declare void @printf(i8*, i32)
 
 define void @putInt32(i32 %a) {
-  %1 = getelementptr inbounds [3 x i8], [3 x i8]* @intFormat, i32 0, i32 0
+  %1 = getelementptr inbounds [4 x i8], [4 x i8]* @intFormat, i32 0, i32 0
   call void @printf(i8* %1, i32 %a)
   ret void
 }
@@ -20,10 +20,16 @@ define i32 @main() {
   %6 = mul i32 7, 8
   %7 = mul i32 %6, 9
   %8 = mul i32 %7, 1
-  %9 = add i32 1123, %4
-  %10 = add i32 %9, %5
-  %11 = add i32 %10, %8
-  %12 = add i32 %11, 1
-  call void @putInt32(i32 %12)
+  %9 = sub i32 0, 10000
+  %10 = add i32 1123, %4
+  %11 = add i32 %10, %5
+  %12 = add i32 %11, %8
+  %13 = add i32 %12, 1
+  %14 = add i32 %13, %9
+  call void @putInt32(i32 %14)
+  %15 = udiv i32 2, 3
+  call void @putInt32(i32 %15)
+  %16 = add i32 3, 4
+  call void @putInt32(i32 %16)
   ret i32 0
 }
