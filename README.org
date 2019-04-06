@@ -1,1 +1,6 @@
 * slang
+  
+** step one
+- [X] finish simple s-expression parser
+- [ ] add arithmetic(such as `+`, `-`, `*`, `/`) support 
+- [ ] compile to llvm
