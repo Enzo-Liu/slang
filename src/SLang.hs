@@ -1,10 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
-module SLang where
+{-# LANGUAGE RecursiveDo       #-}
 
+module SLang where
 import           Control.Monad
+import           Control.Monad.Fix
 import qualified Data.Text                  as T
 import           LLVM.AST
-import           LLVM.AST.Type
+import           LLVM.AST.IntegerPredicate
+import           LLVM.AST.Type              as AST
 import           Text.Parsec
 import qualified Text.Parsec.Number         as PN
 import           Text.Parsec.Text
@@ -30,27 +33,50 @@ parse fname input = let res = runParser slExpr () fname input
                              Right r  -> r
 
 compile :: SLExpr -> Module
-compile expr = LLVMIR.buildModule "slang.ll" $ compile' expr
+compile expr = LLVMIR.buildModule "slang.ll" $ mdo
+  -- putchar <- LLVMIR.extern "putchar" [i8] AST.void
+  printf <- LLVMIR.extern "printf" [ptr i8, i32] AST.void
+  putInt32 <- LLVMIR.function "putInt32" [(i32, "a")] AST.void $ \ops ->
+    putsInt printf (head ops)
+  LLVMIR.function "main" [] i32 $ \_ -> do
+    op <- compile' expr
+    _ <- LLVMIR.call putInt32 [(op, [])]
+    ret <- LLVMIR.int32 0
+    LLVMIR.ret ret
 
-compile' :: LLVMIR.MonadModuleBuilder m => SLExpr -> m Operand
+compile' :: LLVMIR.MonadIRBuilder m => SLExpr -> m Operand
 compile' (SLExpr exprs) = compileFunc exprs
 compile' (SLAtom atom)  = compileConstant atom
 
-compileFunc :: LLVMIR.MonadModuleBuilder m => [SLExpr] -> m Operand
+zeroChar :: Applicative m => m Operand
+zeroChar = LLVMIR.int32 48
+
+putsInt :: (LLVMIR.MonadModuleBuilder m, LLVMIR.MonadIRBuilder m) => Operand -> Operand -> m ()
+putsInt printf op = do
+  -- "%d" = 37,100 = 00100101,01100100 = 9572 = 37 << 8 + 100
+  intFormat <- LLVMIR.globalStringPtr "%d" "intFormat"
+  _ <- LLVMIR.call printf [(intFormat, []), (op,[])]
+  LLVMIR.retVoid
+
+putsDigit :: LLVMIR.MonadIRBuilder m => Operand -> Operand -> m ()
+putsDigit putchar op = do
+  charInt <- zeroChar >>= LLVMIR.add op >>= (`LLVMIR.trunc` i8)
+  _ <- LLVMIR.call putchar [(charInt, [])]
+  LLVMIR.retVoid
+
+compileFunc :: LLVMIR.MonadIRBuilder m => [SLExpr] -> m Operand
 compileFunc (SLAtom (SLASymbol "+"):args) = do
   unless (length args == 2) (error "wrong number of arguments")
   ops <- mapM compile' args
   let op1 = head ops
       op2 = ops !! 1
-  LLVMIR.function "main" [] i32 $ \_ -> do
-    op <- LLVMIR.add op1 op2
-    LLVMIR.ret op
+  LLVMIR.add op1 op2
 compileFunc (SLAtom (SLASymbol "-"):args) = undefined
 compileFunc _ = undefined
 
-compileConstant :: LLVMIR.MonadModuleBuilder m => SLAtom -> m Operand
+compileConstant :: Applicative m => SLAtom -> m Operand
 compileConstant (SLAInt int) = LLVMIR.int32 $ fromIntegral int
-compileConstant _ = undefined
+compileConstant _            = undefined
 
 slAInt :: Parser SLAtom
 slAInt = SLAInt <$> PN.int
