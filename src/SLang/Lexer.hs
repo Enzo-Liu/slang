@@ -1,31 +1,59 @@
 {-# LANGUAGE OverloadedStrings #-}
 module SLang.Lexer where
 
-import           Data.ByteString                    (ByteString)
-import qualified Data.ByteString.Char8              as BS
-import           SLang.Expr
+import SLang.Expr
+
+import qualified Data.Text                  as T
 import           Text.Parsec
-import           Text.Parsec.ByteString
+import qualified Text.Parsec.Number         as PN
+import           Text.Parsec.Text
 
+slAInt :: Parser SLAtom
+slAInt = SLAInt <$> PN.int
 
+parse :: String -> T.Text -> SLExpr
+parse fname input = let res = runParser slExpr () fname input
+                        in case res of
+                             Left err -> error (show err)
+                             Right r  -> r
 
-lexer :: ByteString -> Either ParseError SExpr
-lexer = runParser sexpr () "slang lexer"
+slASymbol :: Parser SLAtom
+slASymbol = SLASymbol . T.pack <$> symbol
 
-ident :: Parser ByteString
-ident = BS.pack <$> ((:) <$> letter <*> many alphaNum)
+symbol :: Parser String
+symbol = ((:[]) <$> oneOf "+-*/") <|> (many1 letter <> many alphaNum)
 
-int :: Parser Integer
-int = read <$> many1 digit
+escape :: Parser String
+escape = do
+    d <- char '\\'
+    c <- oneOf "\\\"0nrvtbf" -- all the characters which can be escaped
+    return [d, c]
 
-atom :: Parser Atom
-atom = parseN <|> parseIdent
-  where parseN = N <$> int
-        parseIdent = I <$> ident
+nonEscape :: Parser Char
+nonEscape = noneOf "\\\"\0\n\r\v\t\b\f"
 
-sexpr :: Parser SExpr
-sexpr = withSpaces (parseAtom <|> parseComb)
-  where parseAtom = A <$> atom
-        parseComb = between (char '(') (char ')') (Comb <$> many1 sexpr)
-        withSpaces :: Parser a -> Parser a
-        withSpaces p = spaces *> p <* spaces
+character :: Parser String
+character = fmap return nonEscape <|> escape
+
+parseString :: Parser String
+parseString = concat <$> between (char '"') (char '"') (many character)
+
+slString :: Parser SLAtom
+slString = SLString . T.pack <$> parseString
+
+slAtom :: Parser SLAtom
+slAtom = spaces *> (
+  try slAInt  -- if sign is matched, this will fail, so use `try`
+  <|> slString
+  <|> slASymbol
+  ) <* spaces
+
+slExprComposite :: Parser SLExpr
+slExprComposite = SLExpr <$>
+  between (char '(') (char ')') insideExprs
+
+insideExprs :: Parser [SLExpr]
+insideExprs = slExpr `sepBy` spaces
+
+slExpr :: Parser SLExpr
+slExpr = slExprComposite <|> SLAtom <$> slAtom

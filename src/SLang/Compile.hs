@@ -1,69 +1,51 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecursiveDo       #-}
 
 module SLang.Compile where
 
-import           SLang.CodeGen
+import           LLVM.AST
+import           LLVM.AST.Type             as AST
 import           SLang.Expr
 
-import           Control.Monad         hiding (void)
+import           Control.Monad
+import qualified LLVM.IRBuilder.Constant    as IR
+import qualified LLVM.IRBuilder.Instruction as IR
+import qualified LLVM.IRBuilder.Module      as IR
+import qualified LLVM.IRBuilder.Monad       as IR
 
 
-import qualified Data.ByteString.Char8 as BSC
-import           Data.Text (unpack)
-import           Data.Char             (ord)
-import qualified LLVM.AST              as AST
-import qualified LLVM.AST.Constant     as C
-import qualified LLVM.AST.Global       as G
-import qualified LLVM.AST.Type         as T
+compile :: SLExpr -> Module
+compile expr = IR.buildModule "slang.ll" $ mdo
+  printf <- IR.extern "printf" [ptr i8, i32] AST.void
+  putInt32 <- IR.function "putInt32" [(i32, "a")] AST.void $ \ops ->
+    putsInt printf (head ops)
+  IR.function "main" [] i32 $ \_ -> do
+    op <- compile' expr
+    _ <- IR.call putInt32 [(op, [])]
+    ret <- IR.int32 0
+    IR.ret ret
 
-toSig :: [Name] -> [(AST.Type, AST.Name)]
-toSig = map (\x -> (double, AST.Name x))
+compile' :: IR.MonadIRBuilder m => SLExpr -> m Operand
+compile' (SLExpr exprs) = compileFunc exprs
+compile' (SLAtom atom)  = compileConstant atom
 
-codegenTop :: Expr -> LLVM ()
-codegenTop (Function name args body) = do
-  define double name largs bls
-  where
-    largs = map (\x -> (double, AST.Name x)) args
-    bls _ = do
-      forM_ args $ \a -> do
-        var <- alloca double
-        store var (local void (AST.Name a))
-        assign a var
-      cgen body >>= ret
+putsInt :: (IR.MonadModuleBuilder m, IR.MonadIRBuilder m) => Operand -> Operand -> m ()
+putsInt printf op = do
+  -- "%d" = 37,100 = 00100101,01100100 = 9572 = 37 << 8 + 100
+  intFormat <- IR.globalStringPtr "%d" "intFormat"
+  _ <- IR.call printf [(intFormat, []), (op,[])]
+  IR.retVoid
 
-codegenTop (Extern name args) = do
-  external double name fnargs
-  where fnargs = toSig args
+compileFunc :: IR.MonadIRBuilder m => [SLExpr] -> m Operand
+compileFunc (SLAtom (SLASymbol "+"):args) = do
+  unless (length args == 2) (error "wrong number of arguments")
+  ops <- mapM compile' args
+  let op1 = head ops
+      op2 = ops !! 1
+  IR.add op1 op2
+compileFunc (SLAtom (SLASymbol "-"):args) = undefined
+compileFunc _ = undefined
 
-codegenTop exp = define void "main" [] bls
-  where bls _ = cgen exp >>= ret
-
-cgen :: Expr -> Codegen AST.Operand
-cgen (Call fn args) = do
-  let fname = AST.Name fn
-      fntype = T.ptr (T.FunctionType void [T.ptr T.i8] False)
-  largs <- mapM cgen args
-  call (externf fntype fname) largs
-
-cgen (Str cs) = return $ cons $ C.Array T.i8 (map stc (unpack cs))
-  where stc = C.Int 8 . toInteger . ord
-
-cgen (Var x) = return $ cons $ C.GetElementPtr True (C.GlobalReference (T.ptr $ T.ArrayType 5 T.i8) (AST.Name x)) [C.Int 32 0, C.Int 32 0]
-
-cgen _ = undefined
-
-puts :: Name -> Codegen ()
-puts n = do
-  let fname = AST.Name "puts"
-      fntype = T.ptr (T.FunctionType void [T.ptr T.i8] False)
-  largs <- mapM cgen [Var n]
-  voidcall (externf fntype fname) largs
-
-genBlock :: T.Type -> Codegen (AST.Named AST.Terminator)
-genBlock _ = do
-  puts "t"
-  ret $ cons (C.Int 32 0)
-
--- source:
--- (external puts (char*))
--- (puts "sdf")
+compileConstant :: Applicative m => SLAtom -> m Operand
+compileConstant (SLAInt int) = IR.int32 $ fromIntegral int
+compileConstant _            = undefined
