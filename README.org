@@ -1,11 +1,14 @@
-* slang
+* slang (stands for s-expression languange...)
 ** pre-requirements
-- `llvm`. this project use llvm as compiler backend. 
-- `stack`, to setup ghc, downloads all dependencies, build the compiler, etc.
+- =llvm=. this project use llvm as compiler backend. 
+- =stack=, to setup ghc, downloads all dependencies, build the compiler, etc.
 
 #+BEGIN_SRC bash
-  brew install llvm-hs/llvm/llvm-8
-  curl -sSL https://get.haskellstack.org/ | sh # https://docs.haskellstack.org/en/stable/README/
+# this will take a long time
+# in my macbookpro(late 2015 i7, it takes about 1 hour
+brew install llvm-hs/llvm/llvm-8 
+# https://docs.haskellstack.org/en/stable/README/
+curl -sSL https://get.haskellstack.org/ | sh 
 #+END_SRC
 
 ** the compile process 
@@ -19,12 +22,12 @@
   slc sl-data/test.sl
   lli-8 sl-data/test.ll # if lli-8 don't exists, check the path and homebrew
 #+END_SRC
-you can always check the `*.ll` file for more compile details
+you can always check the =*.ll= file for more compile details
 
 ** step one
 - [X] finish simple s-expression parser
-- [X] add arithmetic(such as `+`, `-`, `*`, `/`) support
-  - run `/usr/local/Cellar/llvm-8/8.0.0/bin/lli-8 ./sl-data/test.ll` to see the return code...
+- [X] add arithmetic(such as =+=, =-=, =*=, =/=) support
+  - run =/usr/local/Cellar/llvm-8/8.0.0/bin/lli-8 ./sl-data/test.ll= to see the return code...
   - use printf to show result of top level instuctions
 - [X] compile to llvm
 
@@ -51,6 +54,7 @@ SUM:                            13             59             76            279
 - [ ] add top level function define
 - [ ] add more primitive functions 
   - export from stdio/libc
+- [ ] add =sli= support (repl)
 
 ** step three
 - [ ] add control flow
@@ -58,7 +62,7 @@ SUM:                            13             59             76            279
 - [ ] explore optimations supported by llvm
 
 ** step four
-- [ ] experiment `type` system and other fantastical possibilities
+- [ ] experiment =type= system and other fantastical possibilities
 - [ ] runtime system
 - [ ] lock, thread, so on...
 
