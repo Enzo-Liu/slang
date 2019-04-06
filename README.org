@@ -1,4 +1,11 @@
 * slang
+** pre-requirements
+- `llvm`, `brew install llvm-hs/llvm/llvm-8`. this project use llvm as compiler backend. 
+- `stack`, to setup ghc, downloads all dependencies, build the compiler, etc.
+
+** the compile process 
+
+**.sl -> haskell-ast -> llvm ir -> all the format llvm supports
 
 ** step one
 - [X] finish simple s-expression parser
