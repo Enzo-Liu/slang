@@ -2,6 +2,23 @@
 
 ** step one
 - [X] finish simple s-expression parser
-- [ ] add arithmetic(such as `+`, `-`, `*`, `/`) support
+- [X] add arithmetic(such as `+`, `-`, `*`, `/`) support
   - run `/usr/local/Cellar/llvm-8/8.0.0/bin/lli-8 ./sl-data/test.ll` to see the return code...
-- [ ] compile to llvm
+  - use printf to show result of top level instuctions
+- [X] compile to llvm
+
+** step two
+- [ ] add top level function define
+- [ ] add more primitive functions 
+  - export from stdio/libc
+
+** step three
+- [ ] add control flow
+
+** step four
+- [ ] experiment `type` system and other fantastical possibilities
+- [ ] runtime system
+- [ ] lock, thread, so on...
+
+** step five
+- [ ] gc...  :: seems a long way to me
