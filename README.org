@@ -7,6 +7,14 @@
 
 **.sl -> haskell-ast -> llvm ir -> all the format llvm supports
 
+** how to run
+#+BEGIN_SRC bash
+  stack build
+  stack install # after this step , stack will install slc to the bin path you configigured. (normally, it's ~/.local/bin/, make sure this is in your path config)
+  slc sl-data/test.sl
+  lli-8 sl-data/test.ll # if lli-8 don't exists, check the path and homebrew
+#+END_SRC
+you can always check the `*.ll` file for more compile details
 ** step one
 - [X] finish simple s-expression parser
 - [X] add arithmetic(such as `+`, `-`, `*`, `/`) support
@@ -21,6 +29,8 @@
 
 ** step three
 - [ ] add control flow
+- [ ] jit (mostly already supported by llvm)
+- [ ] explore optimations supported by llvm
 
 ** step four
 - [ ] experiment `type` system and other fantastical possibilities
