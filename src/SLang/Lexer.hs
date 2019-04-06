@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 module SLang.Lexer where
 
-import SLang.Expr
+import           SLang.Expr
 
-import qualified Data.Text                  as T
+import qualified Data.Text          as T
 import           Text.Parsec
-import qualified Text.Parsec.Number         as PN
+import qualified Text.Parsec.Number as PN
 import           Text.Parsec.Text
 
 slAInt :: Parser SLAtom
@@ -42,11 +42,10 @@ slString :: Parser SLAtom
 slString = SLString . T.pack <$> parseString
 
 slAtom :: Parser SLAtom
-slAtom = spaces *> (
+slAtom =
   try slAInt  -- if sign is matched, this will fail, so use `try`
   <|> slString
   <|> slASymbol
-  ) <* spaces
 
 slExprComposite :: Parser SLExpr
 slExprComposite = SLExpr <$>
@@ -56,4 +55,7 @@ insideExprs :: Parser [SLExpr]
 insideExprs = slExpr `sepBy` spaces
 
 slExpr :: Parser SLExpr
-slExpr = slExprComposite <|> SLAtom <$> slAtom
+slExpr = withSpaces $ slExprComposite <|> SLAtom <$> slAtom
+  where
+    withSpaces :: Parser SLExpr -> Parser SLExpr
+    withSpaces expr = spaces *> expr <* spaces
