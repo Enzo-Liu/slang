@@ -29,6 +29,7 @@ you can always check the =*.ll= file for more compile details
 - [X] add arithmetic(such as =+=, =-=, =*=, =/=) support
   - run =/usr/local/Cellar/llvm-8/8.0.0/bin/lli-8 ./sl-data/test.ll= to see the return code...
   - use printf to show result of top level instuctions
+  - currently only support int32 data type
 - [X] compile to llvm
 
 *** code count
@@ -56,6 +57,7 @@ github.com/AlDanial/cloc v 1.80  T=0.02 s (717.0 files/s, 22833.8 lines/s)
 
 ** step three
 - [ ] add control flow
+- [ ] add more types, =double=, =char=, =bool=, =string=
 - [ ] jit (mostly already supported by llvm)
 - [ ] explore optimations supported by llvm
 
