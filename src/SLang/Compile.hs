@@ -51,7 +51,8 @@ compileConstant _            = undefined
 
 compielFunc' ::IR.MonadIRBuilder m => T.Text -> [Operand] -> m Operand
 compielFunc' "+" (op1:ops) = foldM IR.add op1 ops
+compielFunc' "-" [op1] = IR.int32 0 >>= (`IR.sub` op1)
 compielFunc' "-" (op1:ops) = foldM IR.sub op1 ops
 compielFunc' "*" (op1:ops) = foldM IR.mul op1 ops
-compielFunc' "/" (op1:ops) = foldM IR.udiv op1 ops
+compielFunc' "/" (op1:ops@(_:_)) = foldM IR.udiv op1 ops
 compielFunc' _ _ = error "not implemented"

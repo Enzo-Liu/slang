@@ -23,6 +23,7 @@ define i32 @main() {
   %9 = add i32 1123, %4
   %10 = add i32 %9, %5
   %11 = add i32 %10, %8
-  call void @putInt32(i32 %11)
+  %12 = add i32 %11, 1
+  call void @putInt32(i32 %12)
   ret i32 0
 }
