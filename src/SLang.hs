@@ -34,7 +34,6 @@ parse fname input = let res = runParser slExpr () fname input
 
 compile :: SLExpr -> Module
 compile expr = LLVMIR.buildModule "slang.ll" $ mdo
-  -- putchar <- LLVMIR.extern "putchar" [i8] AST.void
   printf <- LLVMIR.extern "printf" [ptr i8, i32] AST.void
   putInt32 <- LLVMIR.function "putInt32" [(i32, "a")] AST.void $ \ops ->
     putsInt printf (head ops)
@@ -48,20 +47,11 @@ compile' :: LLVMIR.MonadIRBuilder m => SLExpr -> m Operand
 compile' (SLExpr exprs) = compileFunc exprs
 compile' (SLAtom atom)  = compileConstant atom
 
-zeroChar :: Applicative m => m Operand
-zeroChar = LLVMIR.int32 48
-
 putsInt :: (LLVMIR.MonadModuleBuilder m, LLVMIR.MonadIRBuilder m) => Operand -> Operand -> m ()
 putsInt printf op = do
   -- "%d" = 37,100 = 00100101,01100100 = 9572 = 37 << 8 + 100
   intFormat <- LLVMIR.globalStringPtr "%d" "intFormat"
   _ <- LLVMIR.call printf [(intFormat, []), (op,[])]
-  LLVMIR.retVoid
-
-putsDigit :: LLVMIR.MonadIRBuilder m => Operand -> Operand -> m ()
-putsDigit putchar op = do
-  charInt <- zeroChar >>= LLVMIR.add op >>= (`LLVMIR.trunc` i8)
-  _ <- LLVMIR.call putchar [(charInt, [])]
   LLVMIR.retVoid
 
 compileFunc :: LLVMIR.MonadIRBuilder m => [SLExpr] -> m Operand
