@@ -1,7 +1,12 @@
 * slang
 ** pre-requirements
-- `llvm`, `brew install llvm-hs/llvm/llvm-8`. this project use llvm as compiler backend. 
+- `llvm`. this project use llvm as compiler backend. 
 - `stack`, to setup ghc, downloads all dependencies, build the compiler, etc.
+
+#+BEGIN_SRC bash
+  brew install llvm-hs/llvm/llvm-8
+  curl -sSL https://get.haskellstack.org/ | sh # https://docs.haskellstack.org/en/stable/README/
+#+END_SRC
 
 ** the compile process 
 
