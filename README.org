@@ -31,24 +31,22 @@ you can always check the =*.ll= file for more compile details
   - use printf to show result of top level instuctions
 - [X] compile to llvm
 
-#+BEGIN_QUOTE
+*** code count
 $ cloc $(git ls-files)
       22 text files.
       22 unique files.
       10 files ignored.
 
 github.com/AlDanial/cloc v 1.80  T=0.02 s (717.0 files/s, 22833.8 lines/s)
--------------------------------------------------------------------------------
-Language                     files          blank        comment           code
--------------------------------------------------------------------------------
-Haskell                          7             40              1            156
-Assembly                         3              5             12             67
-YAML                             2             14             63             53
-Bourne Shell                     1              0              0              3
--------------------------------------------------------------------------------
-SUM:                            13             59             76            279
--------------------------------------------------------------------------------
-#+END_QUOTE
+
+| Language     | files | blank | comment | code |
+|--------------+-------+-------+---------+------|
+| haskell      |     7 |    40 |       1 |  156 |
+| assembly     |     3 |     5 |      12 |   67 |
+| YAML         |     2 |    14 |      63 |   53 |
+| Bourne Shell |     1 |     0 |       0 |    3 |
+|--------------+-------+-------+---------+------|
+| SUM:         |    13 |    59 |      76 |  279 |
 
 ** step two
 - [ ] add top level function define
