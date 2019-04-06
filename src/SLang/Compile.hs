@@ -3,11 +3,14 @@
 
 module SLang.Compile where
 
-import           LLVM.AST
-import           LLVM.AST.Type             as AST
 import           SLang.Expr
 
 import           Control.Monad
+import           LLVM.AST
+import           LLVM.AST.Type              as AST
+
+import qualified Data.Text                  as T
+
 import qualified LLVM.IRBuilder.Constant    as IR
 import qualified LLVM.IRBuilder.Instruction as IR
 import qualified LLVM.IRBuilder.Module      as IR
@@ -37,15 +40,18 @@ putsInt printf op = do
   IR.retVoid
 
 compileFunc :: IR.MonadIRBuilder m => [SLExpr] -> m Operand
-compileFunc (SLAtom (SLASymbol "+"):args) = do
-  unless (length args == 2) (error "wrong number of arguments")
-  ops <- mapM compile' args
-  let op1 = head ops
-      op2 = ops !! 1
-  IR.add op1 op2
-compileFunc (SLAtom (SLASymbol "-"):args) = undefined
-compileFunc _ = undefined
+compileFunc (SLAtom (SLASymbol fname):args') = do
+  ops <- mapM compile' args'
+  compielFunc' fname ops
+compileFunc _ = error "should not enter"
 
 compileConstant :: Applicative m => SLAtom -> m Operand
 compileConstant (SLAInt int) = IR.int32 $ fromIntegral int
 compileConstant _            = undefined
+
+compielFunc' ::IR.MonadIRBuilder m => T.Text -> [Operand] -> m Operand
+compielFunc' "+" [op1, op2]= IR.add op1 op2
+compielFunc' "-" [op1, op2]= IR.sub op1 op2
+compielFunc' "*" [op1, op2]= IR.mul op1 op2
+compielFunc' "/" [op1, op2]= IR.udiv op1 op2
+compielFunc' _ _ = error "not implemented"
