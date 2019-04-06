@@ -22,7 +22,6 @@ description:         Please see the README on Github at <https://github.com/Enzo
 dependencies:
 - base >= 4.7 && < 5
 - bytestring
-- llvm-hs-pretty
 - containers
 - mtl
 - text
