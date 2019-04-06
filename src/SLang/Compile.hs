@@ -16,9 +16,6 @@ import qualified LLVM.AST.Constant     as C
 import qualified LLVM.AST.Global       as G
 import qualified LLVM.AST.Type         as T
 
-import           LLVM.Context
-import           LLVM.Module
-
 toSig :: [Name] -> [(AST.Type, AST.Name)]
 toSig = map (\x -> (double, AST.Name x))
 
@@ -54,23 +51,6 @@ cgen (Str cs) = return $ cons $ C.Array T.i8 (map stc (unpack cs))
 cgen (Var x) = return $ cons $ C.GetElementPtr True (C.GlobalReference (T.ptr $ T.ArrayType 5 T.i8) (AST.Name x)) [C.Int 32 0, C.Int 32 0]
 
 cgen _ = undefined
-
-main = withContext $ \context -> do
-  withModuleFromAST context newast $ \m -> do
-    llstr <- moduleLLVMAssembly m
-    BSC.putStrLn llstr
-    return ()
-  where
-    newast = runLLVM (emptyModule "test") $ do
-      addDefn $ AST.GlobalDefinition $ G.globalVariableDefaults {
-          G.name  = AST.Name "t"
-        , G.type' = T.ArrayType 5 T.i8
-        , G.isConstant = True
-        , G.initializer = Just (C.Array T.i8
-                                (map (C.Int 8 . toInteger . ord) "test\0") )
-                                                                }
-      external void "puts" [(T.ptr T.i8, AST.UnName 1)]
-      define T.i32 "main" [] genBlock
 
 puts :: Name -> Codegen ()
 puts n = do
