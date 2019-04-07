@@ -27,8 +27,8 @@ isKey k (SLExpr (SLAtom (SLASymbol s):_)) | s == k = True
 isKey _ _                                 = False
 
 isDef :: SLExpr -> Bool
-isDef = isKey "def"
+isDef = isKey "defun"
 
 isSymbolDef :: SLExpr -> Bool
-isSymbolDef (SLAtom (SLASymbol s)) = s == "def"
+isSymbolDef (SLAtom (SLASymbol s)) = s == "defun"
 isSymbolDef _ = False

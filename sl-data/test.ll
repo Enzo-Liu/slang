@@ -16,26 +16,30 @@ define i32 @a(i32 %b) {
   ret i32 %1
 }
 
+define i32 @b(i32 %c, i32 %d) {
+  %1 = sub i32 %c, %d
+  %2 = udiv i32 %c, %d
+  %3 = udiv i32 %2, %1
+  ret i32 %3
+}
+
 define i32 @main() {
-  %1 = add i32 3000, 4002
-  %2 = add i32 %1, 1
-  %3 = add i32 %2, 3
-  %4 = add i32 %3, 2
-  %5 = udiv i32 23, 30
-  %6 = mul i32 7, 8
-  %7 = mul i32 %6, 9
-  %8 = mul i32 %7, 1
-  %9 = call i32 @a(i32 10000)
-  %10 = call i32 @a(i32 %9)
-  %11 = add i32 1123, %4
-  %12 = add i32 %11, %5
-  %13 = add i32 %12, %8
-  %14 = add i32 %13, 1
-  %15 = add i32 %14, %10
-  call void @putInt32(i32 %15)
-  %16 = udiv i32 2, 3
-  call void @putInt32(i32 %16)
-  %17 = add i32 3, 4
-  call void @putInt32(i32 %17)
+  %1 = call i32 @b(i32 3000, i32 4002)
+  %2 = udiv i32 23, 30
+  %3 = mul i32 7, 8
+  %4 = mul i32 %3, 9
+  %5 = mul i32 %4, 1
+  %6 = call i32 @a(i32 10000)
+  %7 = call i32 @a(i32 %6)
+  %8 = add i32 1123, %1
+  %9 = add i32 %8, %2
+  %10 = add i32 %9, %5
+  %11 = add i32 %10, 1
+  %12 = add i32 %11, %7
+  call void @putInt32(i32 %12)
+  %13 = udiv i32 2, 3
+  call void @putInt32(i32 %13)
+  %14 = add i32 3, 4
+  call void @putInt32(i32 %14)
   ret i32 0
 }
