@@ -7,7 +7,6 @@ module SLang.Compile where
 
 import           SLang.Expr
 
-import           Control.Applicative
 import           Control.Monad
 import           Control.Monad.State
 import           Data.String
@@ -70,8 +69,8 @@ compile (SLProgram exprs) = execCodeBuilder $ mdo
   _ <- extern printfName [ptr i8, i32] AST.void
   _ <- function putInt32Name [(i32, "a")] AST.void $ \ops ->
     getFunc printfName >>= (`putsInt` head ops)
-  let defs = filter isDef exprs
-      instructions = filter (not . isDef) exprs
+  let defs = filter isDefun exprs
+      instructions = filter (not . isDefun) exprs
   mapM_ compile' defs
   function "main" [] i32 $ \_ -> do
     mapM_ (compile' Control.Monad.>=>
@@ -81,8 +80,27 @@ compile (SLProgram exprs) = execCodeBuilder $ mdo
     IR.ret ret
 
 compile' :: SLExpr -> CodeBuilder Operand
-compile' (SLExpr exprs) = compileFunc exprs
-compile' (SLAtom atom)  = compileConstant atom
+compile' (SLFunction f args' body) = do
+  let name = mkName $ T.unpack f
+      paramTypes = map (\n -> (i32, fromString $ T.unpack n)) args'
+  containsFunc name >>= (`when` error "conflict function name")
+  function name paramTypes i32 $ \ops -> do
+    lastArgMap <- gets argMap
+    modify (\s -> s {argMap = toArgMap ops})
+    results <- mapM compile' body
+    modify (\s -> s {argMap = lastArgMap})
+    -- the last value as function returns
+    IR.ret $ results !! (length results - 1)
+
+-- todo , not only search for local reference, global too
+compile' (SLSymbol s) = (M.! (fromString $ T.unpack s) ) <$> gets argMap
+
+compile' (SLCall fn params)  = do
+  ops <- mapM compile' params
+  compielFunc' fn ops
+
+compile' (SLInt i)  = IR.int32 $ fromIntegral i 
+compile' (SLString _)  = undefined
 
 putsInt :: Operand -> Operand -> CodeBuilder ()
 putsInt printf op = do
@@ -93,34 +111,6 @@ putsInt printf op = do
 
 toArgMap :: [Operand] -> M.Map Name Operand
 toArgMap = M.fromList . map (\o@(LocalReference _ n)-> (n, o))
-
-compileFunc :: [SLExpr] -> CodeBuilder Operand
--- function definition
-compileFunc (expr : args')
-  | isSymbolDef expr = do
-      let (SLAtom (SLASymbol nameText):params:bodys) = args'
-          name = mkName $ T.unpack nameText
-          paramNames = map symbolName . subExprs $ params
-          paramTypes = map (\n -> (i32, fromString $ T.unpack n)) paramNames
-      containsFunc name >>= (`when` error "conflict function name")
-      function name paramTypes i32 $ \ops -> do
-        lastArgMap <- gets argMap
-        modify (\s -> s {argMap = toArgMap ops})
-        results <- mapM compile' bodys
-        modify (\s -> s {argMap = lastArgMap})
-        -- the last value as function returns
-        IR.ret $ results !! (length results - 1)
-
--- call function
-compileFunc (SLAtom (SLASymbol fname):args') = do
-  ops <- mapM compile' args'
-  compielFunc' fname ops
-compileFunc _ = error "should not enter"
-
-compileConstant :: SLAtom -> CodeBuilder Operand
-compileConstant (SLAInt int)  = IR.int32 $ fromIntegral int
-compileConstant (SLASymbol s) = (M.! (fromString $ T.unpack s) ) <$> gets argMap
-compileConstant _             = undefined
 
 compielFunc' :: T.Text -> [Operand] -> CodeBuilder Operand
 compielFunc' "+" (op1:ops)       = foldM IR.add op1 ops
