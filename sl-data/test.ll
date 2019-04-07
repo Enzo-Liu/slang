@@ -11,6 +11,11 @@ define void @putInt32(i32 %a) {
   ret void
 }
 
+define i32 @a(i32 %b) {
+  %1 = add i32 %b, 1
+  ret i32 %1
+}
+
 define i32 @main() {
   %1 = add i32 3000, 4002
   %2 = add i32 %1, 1
@@ -20,7 +25,7 @@ define i32 @main() {
   %6 = mul i32 7, 8
   %7 = mul i32 %6, 9
   %8 = mul i32 %7, 1
-  %9 = sub i32 0, 10000
+  %9 = call i32 @a(i32 10000)
   %10 = add i32 1123, %4
   %11 = add i32 %10, %5
   %12 = add i32 %11, %8

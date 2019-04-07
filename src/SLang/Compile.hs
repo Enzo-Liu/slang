@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RecursiveDo                #-}
@@ -9,7 +10,8 @@ import           SLang.Expr
 import           Control.Applicative
 import           Control.Monad
 import           Control.Monad.State
-import           LLVM.AST hiding (function)
+import           Data.String
+import           LLVM.AST                   hiding (function)
 import           LLVM.AST.Type              as AST
 
 import qualified Data.Map.Strict            as M
@@ -21,14 +23,15 @@ import qualified LLVM.IRBuilder.Module      as IR
 import qualified LLVM.IRBuilder.Monad       as IR
 
 data CodegenState = CodegenState {
-  primFuncMap :: M.Map Name Operand
+  primFuncMap :: M.Map Name Operand,
+  argMap      :: M.Map Name Operand
                                  }
 
 newtype Codegen a = Codegen { runCodegen :: State CodegenState a }
   deriving (Functor, Applicative, Monad, MonadState CodegenState )
 
 emptyCodegen :: CodegenState
-emptyCodegen = CodegenState M.empty
+emptyCodegen = CodegenState M.empty M.empty
 
 execCodegen :: Codegen Module -> Module
 execCodegen m = evalState (runCodegen m) emptyCodegen
@@ -53,6 +56,9 @@ instPrim n op = do
 getFunc :: Name -> CodeBuilder Operand
 getFunc n = gets $ (M.! n) . primFuncMap
 
+containsFunc :: Name -> CodeBuilder Bool
+containsFunc n = gets $ M.member n . primFuncMap
+
 putInt32Name :: Name
 putInt32Name = "putInt32"
 
@@ -66,6 +72,7 @@ compile (SLProgram exprs) = execCodeBuilder $ mdo
     getFunc printfName >>= (`putsInt` head ops)
   let defs = filter isDef exprs
       instructions = filter (not . isDef) exprs
+  mapM_ compile' defs
   function "main" [] i32 $ \_ -> do
     mapM_ (compile' Control.Monad.>=>
              (\op -> getFunc putInt32Name >>= (`IR.call` [(op, [])])))
@@ -84,20 +91,46 @@ putsInt printf op = do
   _ <- IR.call printf [(intFormat, []), (op,[])]
   IR.retVoid
 
+toArgMap :: [Operand] -> M.Map Name Operand
+toArgMap = M.fromList . map (\o@(LocalReference _ n)-> (n, o))
+
 compileFunc :: [SLExpr] -> CodeBuilder Operand
+-- function definition
+compileFunc (expr : args')
+  | isSymbolDef expr = do
+      let (SLAtom (SLASymbol nameText):params:bodys) = args'
+          name = mkName $ T.unpack nameText
+          paramNames = map symbolName . subExprs $ params
+          paramTypes = map (\n -> (i32, fromString $ T.unpack n)) paramNames
+      containsFunc name >>= (`when` error "conflict function name")
+      function name paramTypes i32 $ \ops -> do
+        lastArgMap <- gets argMap
+        modify (\s -> s {argMap = toArgMap ops})
+        results <- mapM compile' bodys
+        modify (\s -> s {argMap = lastArgMap})
+        -- the last value as function returns
+        IR.ret $ results !! (length results - 1)
+
+-- call function
 compileFunc (SLAtom (SLASymbol fname):args') = do
   ops <- mapM compile' args'
   compielFunc' fname ops
 compileFunc _ = error "should not enter"
 
-compileConstant :: Applicative m => SLAtom -> m Operand
-compileConstant (SLAInt int) = IR.int32 $ fromIntegral int
-compileConstant _            = undefined
+compileConstant :: SLAtom -> CodeBuilder Operand
+compileConstant (SLAInt int)  = IR.int32 $ fromIntegral int
+compileConstant (SLASymbol s) = (M.! (fromString $ T.unpack s) ) <$> gets argMap
+compileConstant _             = undefined
 
-compielFunc' ::IR.MonadIRBuilder m => T.Text -> [Operand] -> m Operand
+compielFunc' :: T.Text -> [Operand] -> CodeBuilder Operand
 compielFunc' "+" (op1:ops)       = foldM IR.add op1 ops
 compielFunc' "-" [op1]           = IR.int32 0 >>= (`IR.sub` op1)
 compielFunc' "-" (op1:ops)       = foldM IR.sub op1 ops
 compielFunc' "*" (op1:ops)       = foldM IR.mul op1 ops
 compielFunc' "/" (op1:ops@(_:_)) = foldM IR.udiv op1 ops
-compielFunc' _ _                 = error "not implemented"
+compielFunc' n ops                 = do
+  let name = fromString $ T.unpack n
+  hasFunc <- containsFunc name
+  unless hasFunc (error . T.unpack $ n <> "not implimented")
+  f <- getFunc name
+  IR.call f (map (,[]) ops)
