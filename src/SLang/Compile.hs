@@ -13,12 +13,13 @@ import           Data.String
 import           LLVM.AST                   hiding (function)
 import           LLVM.AST.Type              as AST
 
+import qualified Data.ByteString.Short      as BS
 import qualified Data.Map.Strict            as M
 import qualified Data.Text                  as T
 
+import qualified LLVM.AST.IntegerPredicate  as IR
 import qualified LLVM.IRBuilder.Constant    as IR
 import qualified LLVM.IRBuilder.Instruction as IR
-import qualified LLVM.AST.IntegerPredicate  as IR
 import qualified LLVM.IRBuilder.Module      as IR
 import qualified LLVM.IRBuilder.Monad       as IR
 
@@ -123,7 +124,7 @@ compile' (SLCall fn params)  = do
 
 compile' (SLInt i)  = IR.int32 $ fromIntegral i
 -- string to i8 vector
-compile' (SLString s)  = IR.globalStringPtr (T.unpack s) "s"
+compile' (SLString s)  = IR.freshName "const-str" >>= IR.globalStringPtr (T.unpack s)
 
 putsInt :: Operand -> CodeBuilder Operand
 putsInt op = do
