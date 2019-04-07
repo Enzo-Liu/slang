@@ -26,15 +26,16 @@ define i32 @main() {
   %7 = mul i32 %6, 9
   %8 = mul i32 %7, 1
   %9 = call i32 @a(i32 10000)
-  %10 = add i32 1123, %4
-  %11 = add i32 %10, %5
-  %12 = add i32 %11, %8
-  %13 = add i32 %12, 1
-  %14 = add i32 %13, %9
-  call void @putInt32(i32 %14)
-  %15 = udiv i32 2, 3
+  %10 = call i32 @a(i32 %9)
+  %11 = add i32 1123, %4
+  %12 = add i32 %11, %5
+  %13 = add i32 %12, %8
+  %14 = add i32 %13, 1
+  %15 = add i32 %14, %10
   call void @putInt32(i32 %15)
-  %16 = add i32 3, 4
+  %16 = udiv i32 2, 3
   call void @putInt32(i32 %16)
+  %17 = add i32 3, 4
+  call void @putInt32(i32 %17)
   ret i32 0
 }
