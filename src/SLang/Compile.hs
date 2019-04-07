@@ -1,7 +1,7 @@
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RecursiveDo                #-}
+{-# LANGUAGE TupleSections              #-}
 
 module SLang.Compile where
 
@@ -44,6 +44,9 @@ execCodeBuilder cb =
 extern :: Name -> [Type] -> Type -> CodeBuilder Operand
 extern n tys rt = lift (IR.extern n tys rt) >>= instPrim n
 
+externVarArgs :: Name -> [Type] -> Type -> CodeBuilder Operand
+externVarArgs n tys rt = lift (IR.externVarArgs n tys rt) >>= instPrim n
+
 function :: Name -> [(Type, IR.ParameterName)] -> Type -> ([Operand] -> CodeBuilder ()) -> CodeBuilder Operand
 function n tys rt insts = lift (IR.function n tys rt insts) >>= instPrim n
 
@@ -66,9 +69,9 @@ printfName = "printf"
 
 compile :: SLProgram -> Module
 compile (SLProgram exprs) = execCodeBuilder $ mdo
-  _ <- extern printfName [ptr i8, i32] AST.void
-  _ <- function putInt32Name [(i32, "a")] AST.void $ \ops ->
-    getFunc printfName >>= (`putsInt` head ops)
+  _ <- externVarArgs printfName [ptr i8] AST.i32
+  _ <- function putInt32Name [(i32, "a")] AST.i32 $ \ops ->
+    putsInt (head ops) >>= IR.ret
   let defs = filter isDefun exprs
       instructions = filter (not . isDefun) exprs
   mapM_ compile' defs
@@ -97,28 +100,36 @@ compile' (SLSymbol s) = (M.! (fromString $ T.unpack s) ) <$> gets argMap
 
 compile' (SLCall fn params)  = do
   ops <- mapM compile' params
-  compielFunc' fn ops
+  compileCall' fn ops
 
-compile' (SLInt i)  = IR.int32 $ fromIntegral i 
-compile' (SLString _)  = undefined
+compile' (SLInt i)  = IR.int32 $ fromIntegral i
+-- string to i8 vector
+compile' (SLString s)  = IR.globalStringPtr (T.unpack s) "s"
 
-putsInt :: Operand -> Operand -> CodeBuilder ()
-putsInt printf op = do
+putsInt :: Operand -> CodeBuilder Operand
+putsInt op = do
+  printf <- getFunc printfName
   -- "%d" = 37,100 = 00100101,01100100 = 9572 = 37 << 8 + 100
   intFormat <- IR.globalStringPtr "%d\n" "intFormat"
-  _ <- IR.call printf [(intFormat, []), (op,[])]
-  IR.retVoid
+  IR.call printf [(intFormat, []), (op,[])]
+
+print' :: Operand -> CodeBuilder Operand
+print' op = do
+  printf <- getFunc printfName
+  format <- IR.globalStringPtr "%s\n" "strFormat"
+  IR.call printf [(format, []), (op,[])]
 
 toArgMap :: [Operand] -> M.Map Name Operand
 toArgMap = M.fromList . map (\o@(LocalReference _ n)-> (n, o))
 
-compielFunc' :: T.Text -> [Operand] -> CodeBuilder Operand
-compielFunc' "+" (op1:ops)       = foldM IR.add op1 ops
-compielFunc' "-" [op1]           = IR.int32 0 >>= (`IR.sub` op1)
-compielFunc' "-" (op1:ops)       = foldM IR.sub op1 ops
-compielFunc' "*" (op1:ops)       = foldM IR.mul op1 ops
-compielFunc' "/" (op1:ops@(_:_)) = foldM IR.udiv op1 ops
-compielFunc' n ops                 = do
+compileCall' :: T.Text -> [Operand] -> CodeBuilder Operand
+compileCall' "+" (op1:ops)       = foldM IR.add op1 ops
+compileCall' "-" [op1]           = IR.int32 0 >>= (`IR.sub` op1)
+compileCall' "-" (op1:ops)       = foldM IR.sub op1 ops
+compileCall' "*" (op1:ops)       = foldM IR.mul op1 ops
+compileCall' "/" (op1:ops@(_:_)) = foldM IR.udiv op1 ops
+compileCall' "print" [op1]       = print' op1
+compileCall' n ops                 = do
   let name = fromString $ T.unpack n
   hasFunc <- containsFunc name
   unless hasFunc (error . T.unpack $ n <> "not implimented")

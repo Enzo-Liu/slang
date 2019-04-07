@@ -1,5 +1,6 @@
 (defun a (b) (+ b 1))
 (defun b (c d) (/ c d (- c d)))
+(print "hello world-and will print size")
 (+ 1123 (b 3000 4002) (/ 23 30) (* 7 8 9 1 ) (+ 1) (a (a 10000)))
 (/ 2 3)
 (+ 3 4)
