@@ -2,12 +2,14 @@
 source_filename = "<string>"
 
 @intFormat = unnamed_addr constant [4 x i8] c"%d\0A\00"
-@const-str = unnamed_addr constant [13 x i8] c"in else: sdf\00"
+@const-str = unnamed_addr constant [16 x i8] c"in if: test sdf\00"
 @strFormat = unnamed_addr constant [4 x i8] c"%s\0A\00"
-@const-str1 = unnamed_addr constant [16 x i8] c"in if: test sdf\00"
+@const-str1 = unnamed_addr constant [13 x i8] c"in else: sdf\00"
 @strFormat.1 = unnamed_addr constant [4 x i8] c"%s\0A\00"
-@const-str2 = unnamed_addr constant [13 x i8] c"in else: sdf\00"
+@const-str2 = unnamed_addr constant [16 x i8] c"in if: test sdf\00"
 @strFormat.2 = unnamed_addr constant [4 x i8] c"%s\0A\00"
+@const-str3 = unnamed_addr constant [13 x i8] c"in else: sdf\00"
+@strFormat.3 = unnamed_addr constant [4 x i8] c"%s\0A\00"
 
 declare i32 @printf(i8*, ...)
 
@@ -30,60 +32,65 @@ define i32 @b(i32 %c, i32 %d) {
 }
 
 define i32 @main() {
-if-entry:
-  %0 = icmp ugt i32 1, 0
-  br i1 %0, label %if-then, label %if-else
+main-entry:
+  %0 = call i32 @b(i32 3000, i32 4002)
+  %1 = udiv i32 23, 30
+  %2 = mul i32 7, 8
+  %3 = mul i32 %2, 9
+  %4 = mul i32 %3, 1
+  %5 = call i32 @a(i32 10000)
+  %6 = call i32 @a(i32 %5)
+  %7 = add i32 1123, %0
+  %8 = add i32 %7, %1
+  %9 = add i32 %8, %4
+  %10 = add i32 %9, 1
+  %11 = add i32 %10, %6
+  %12 = call i32 @putInt32(i32 %11)
+  br label %if-entry
+
+if-entry:                                         ; preds = %main-entry
+  %13 = icmp ugt i32 1, 0
+  br i1 %13, label %if-then, label %if-else
 
 if-then:                                          ; preds = %if-entry
-  %1 = add i32 1, 2
+  %14 = getelementptr inbounds [16 x i8], [16 x i8]* @const-str, i32 0, i32 0
+  %15 = getelementptr inbounds [4 x i8], [4 x i8]* @strFormat.3, i32 0, i32 0
+  %16 = call i32 (i8*, ...) @printf(i8* %15, i8* %14)
   br label %if-exit
 
 if-else:                                          ; preds = %if-entry
-  %2 = getelementptr inbounds [13 x i8], [13 x i8]* @const-str, i32 0, i32 0
-  %3 = getelementptr inbounds [4 x i8], [4 x i8]* @strFormat.2, i32 0, i32 0
-  %4 = call i32 (i8*, ...) @printf(i8* %3, i8* %2)
+  %17 = getelementptr inbounds [13 x i8], [13 x i8]* @const-str1, i32 0, i32 0
+  %18 = getelementptr inbounds [4 x i8], [4 x i8]* @strFormat.3, i32 0, i32 0
+  %19 = call i32 (i8*, ...) @printf(i8* %18, i8* %17)
   br label %if-exit
 
 if-exit:                                          ; preds = %if-else, %if-then
-  %5 = phi i32 [ %1, %if-then ], [ %4, %if-else ]
-  %6 = call i32 @putInt32(i32 %5)
-  ret void
+  %20 = phi i32 [ %16, %if-then ], [ %19, %if-else ]
+  %21 = call i32 @putInt32(i32 %20)
+  %22 = udiv i32 2, 3
+  %23 = call i32 @putInt32(i32 %22)
+  br label %if-entry1
 
-if-entry1:                                        ; No predecessors!
-  %7 = icmp ugt i32 1, 0
-  br i1 %7, label %if-then1, label %if-else1
+if-entry1:                                        ; preds = %if-exit
+  %24 = icmp ugt i32 0, 0
+  br i1 %24, label %if-then1, label %if-else1
 
 if-then1:                                         ; preds = %if-entry1
-  %8 = getelementptr inbounds [16 x i8], [16 x i8]* @const-str1, i32 0, i32 0
-  %9 = getelementptr inbounds [4 x i8], [4 x i8]* @strFormat.2, i32 0, i32 0
-  %10 = call i32 (i8*, ...) @printf(i8* %9, i8* %8)
+  %25 = getelementptr inbounds [16 x i8], [16 x i8]* @const-str2, i32 0, i32 0
+  %26 = getelementptr inbounds [4 x i8], [4 x i8]* @strFormat.3, i32 0, i32 0
+  %27 = call i32 (i8*, ...) @printf(i8* %26, i8* %25)
   br label %if-exit1
 
 if-else1:                                         ; preds = %if-entry1
-  %11 = getelementptr inbounds [13 x i8], [13 x i8]* @const-str2, i32 0, i32 0
-  %12 = getelementptr inbounds [4 x i8], [4 x i8]* @strFormat.2, i32 0, i32 0
-  %13 = call i32 (i8*, ...) @printf(i8* %12, i8* %11)
+  %28 = getelementptr inbounds [13 x i8], [13 x i8]* @const-str3, i32 0, i32 0
+  %29 = getelementptr inbounds [4 x i8], [4 x i8]* @strFormat.3, i32 0, i32 0
+  %30 = call i32 (i8*, ...) @printf(i8* %29, i8* %28)
   br label %if-exit1
 
 if-exit1:                                         ; preds = %if-else1, %if-then1
-  %14 = phi i32 [ %10, %if-then1 ], [ %13, %if-else1 ]
-  %15 = call i32 @putInt32(i32 %14)
-  %16 = call i32 @b(i32 3000, i32 4002)
-  %17 = udiv i32 23, 30
-  %18 = mul i32 7, 8
-  %19 = mul i32 %18, 9
-  %20 = mul i32 %19, 1
-  %21 = call i32 @a(i32 10000)
-  %22 = call i32 @a(i32 %21)
-  %23 = add i32 1123, %16
-  %24 = add i32 %23, %17
-  %25 = add i32 %24, %20
-  %26 = add i32 %25, 1
-  %27 = add i32 %26, %22
-  %28 = call i32 @putInt32(i32 %27)
-  %29 = udiv i32 2, 3
-  %30 = call i32 @putInt32(i32 %29)
-  %31 = add i32 3, 4
+  %31 = phi i32 [ %27, %if-then1 ], [ %30, %if-else1 ]
   %32 = call i32 @putInt32(i32 %31)
+  %33 = add i32 3, 4
+  %34 = call i32 @putInt32(i32 %33)
   ret i32 0
 }

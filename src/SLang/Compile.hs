@@ -78,8 +78,11 @@ compile (SLProgram exprs) = execCodeBuilder $ mdo
       instructions = filter (not . isDefun) exprs
   mapM_ compile' defs
   function "main" [] i32 $ \_ -> do
+    _ <- IR.block `IR.named` "main-entry"
     mapM_ (compile' Control.Monad.>=>
-             (\op -> getFunc putInt32Name >>= (`IR.call` [(op, [])])))
+             (\op -> getFunc putInt32Name
+               >>= (`IR.call` [(op, [])])
+             ))
       instructions
     ret <- IR.int32 0
     IR.ret ret
@@ -101,7 +104,8 @@ compile' (SLFunction f args' body) = do
 compile' (SLSymbol s) = (M.! (fromString $ T.unpack s) ) <$> gets argMap
 
 compile' (SLIf flagExpr thenBody elseBody)  = mdo
-  _ <- IR.block `IR.named` "if-entry"
+  IR.br entry
+  entry <- IR.block `IR.named` "if-entry"
   flag <- compile' flagExpr
   zero <- IR.int32 0
   branch <- IR.icmp IR.UGT flag zero
