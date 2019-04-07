@@ -18,6 +18,7 @@ import qualified Data.Text                  as T
 
 import qualified LLVM.IRBuilder.Constant    as IR
 import qualified LLVM.IRBuilder.Instruction as IR
+import qualified LLVM.AST.IntegerPredicate  as IR
 import qualified LLVM.IRBuilder.Module      as IR
 import qualified LLVM.IRBuilder.Monad       as IR
 
@@ -27,7 +28,7 @@ data CodegenState = CodegenState {
                                  }
 
 newtype Codegen a = Codegen { runCodegen :: State CodegenState a }
-  deriving (Functor, Applicative, Monad, MonadState CodegenState )
+  deriving (Functor, Applicative, Monad, MonadFix, MonadState CodegenState )
 
 emptyCodegen :: CodegenState
 emptyCodegen = CodegenState M.empty M.empty
@@ -97,6 +98,24 @@ compile' (SLFunction f args' body) = do
 
 -- todo , not only search for local reference, global too
 compile' (SLSymbol s) = (M.! (fromString $ T.unpack s) ) <$> gets argMap
+
+compile' (SLIf flagExpr thenBody elseBody)  = mdo
+  _ <- IR.block `IR.named` "if-entry"
+  flag <- compile' flagExpr
+  zero <- IR.int32 0
+  branch <- IR.icmp IR.UGT flag zero
+  IR.condBr branch thenBlock elseBlock
+
+  thenBlock <- IR.block `IR.named` "if-then"
+  thenRet <- compile' thenBody
+  IR.br exitBlock
+
+  elseBlock <- IR.block `IR.named` "if-else"
+  elseRet <- compile' elseBody
+  IR.br exitBlock
+
+  exitBlock <- IR.block `IR.named` "if-exit"
+  IR.phi [(thenRet, thenBlock), (elseRet, elseBlock)]
 
 compile' (SLCall fn params)  = do
   ops <- mapM compile' params

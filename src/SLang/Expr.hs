@@ -9,6 +9,7 @@ type Params = [SLExpr]
 data SLExpr =
   SLFunction Symbol Args [SLExpr]
   | SLCall Symbol Params
+  | SLIf SLExpr SLExpr SLExpr
   | SLSymbol T.Text
   | SLInt Int
   | SLString T.Text

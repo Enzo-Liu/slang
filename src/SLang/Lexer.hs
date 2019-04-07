@@ -63,6 +63,10 @@ parseBySym "defun" = SLFunction <$>
   (spaces *> tSymbol) <*>
   (spaces *> args) <*>
   (spaces *> funcBody)
+parseBySym "if" = SLIf <$>
+  (spaces *> slExpr) <*>
+  (spaces *> slExpr) <*>
+  (spaces *> slExpr)
 parseBySym n       = SLCall n <$> many slExpr
 
 withBrackets :: Parser a -> Parser a
