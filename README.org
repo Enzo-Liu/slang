@@ -50,10 +50,11 @@ github.com/AlDanial/cloc v 1.80  T=0.02 s (717.0 files/s, 22833.8 lines/s)
 | SUM:         |    13 |    59 |      76 |  279 |
 
 ** step two
-- [ ] add top level function define
 - [ ] add more primitive functions 
   - export from stdio/libc
+- [ ] add top level function define
 - [ ] add =sli= support (repl)
+- [ ] module and namespaces
 
 ** step three
 - [ ] add control flow
