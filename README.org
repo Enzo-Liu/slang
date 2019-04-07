@@ -71,6 +71,14 @@ github.com/AlDanial/cloc v 1.80  T=0.02 s (717.0 files/s, 22833.8 lines/s)
 - [ ] experiment =type= system and other fantastical possibilities
 - [ ] runtime system
 - [ ] lock, thread, so on...
+- [ ] network support
 
 ** step five
-- [ ] gc...  :: seems a long way to me
+- [ ] gc...  
+- [ ] coroutine
+- [ ] continuation
+
+Seems a long way to go
+
+ *KEEP PLAYING! KEEP FIGHTING!*
+  
