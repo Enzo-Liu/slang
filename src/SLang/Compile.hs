@@ -82,11 +82,6 @@ compile (SLProgram exprs) = execCodeBuilder $ mdo
   function "main" [] i32 $ \_ -> do
     _ <- IR.block `IR.named` "main-entry"
     mapM_ compile' instructions
-    -- mapM_ (compile' Control.Monad.>=>
-    --          (\op -> getFunc putInt32Name
-    --            >>= (`IR.call` [(op, [])])
-    --          ))
-    --   instructions
     ret <- IR.int32 0
     IR.ret ret
 
