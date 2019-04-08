@@ -13,7 +13,6 @@ import           Data.String
 import           LLVM.AST                   hiding (function)
 import           LLVM.AST.Type              as AST
 
-import qualified Data.ByteString.Short      as BS
 import qualified Data.Map.Strict            as M
 import qualified Data.Text                  as T
 
@@ -50,7 +49,10 @@ externVarArgs :: Name -> [Type] -> Type -> CodeBuilder Operand
 externVarArgs n tys rt = lift (IR.externVarArgs n tys rt) >>= instPrim n
 
 function :: Name -> [(Type, IR.ParameterName)] -> Type -> ([Operand] -> CodeBuilder ()) -> CodeBuilder Operand
-function n tys rt insts = lift (IR.function n tys rt insts) >>= instPrim n
+function n tys rt insts = mdo
+  _ <- instPrim n op
+  op <- lift (IR.function n tys rt insts)
+  return op
 
 instPrim :: Name -> Operand -> CodeBuilder Operand
 instPrim n op = do
@@ -79,11 +81,12 @@ compile (SLProgram exprs) = execCodeBuilder $ mdo
   mapM_ compile' defs
   function "main" [] i32 $ \_ -> do
     _ <- IR.block `IR.named` "main-entry"
-    mapM_ (compile' Control.Monad.>=>
-             (\op -> getFunc putInt32Name
-               >>= (`IR.call` [(op, [])])
-             ))
-      instructions
+    mapM_ compile' instructions
+    -- mapM_ (compile' Control.Monad.>=>
+    --          (\op -> getFunc putInt32Name
+    --            >>= (`IR.call` [(op, [])])
+    --          ))
+    --   instructions
     ret <- IR.int32 0
     IR.ret ret
 
@@ -107,8 +110,8 @@ compile' (SLIf flagExpr thenBody elseBody)  = mdo
   IR.br entry
   entry <- IR.block `IR.named` "if-entry"
   flag <- compile' flagExpr
-  zero <- IR.int32 0
-  branch <- IR.icmp IR.UGT flag zero
+  true <- IR.bit 1
+  branch <- IR.icmp IR.EQ flag true
   IR.condBr branch thenBlock elseBlock
 
   thenBlock <- IR.block `IR.named` "if-then"
@@ -121,6 +124,9 @@ compile' (SLIf flagExpr thenBody elseBody)  = mdo
 
   exitBlock <- IR.block `IR.named` "if-exit"
   IR.phi [(thenRet, thenBlock), (elseRet, elseBlock)]
+
+compile' (SLBool True)  = IR.bit 1
+compile' (SLBool False)  = IR.bit 0
 
 compile' (SLCall fn params)  = do
   ops <- mapM compile' params
@@ -150,12 +156,14 @@ compileCall' :: T.Text -> [Operand] -> CodeBuilder Operand
 compileCall' "+" (op1:ops)       = foldM IR.add op1 ops
 compileCall' "-" [op1]           = IR.int32 0 >>= (`IR.sub` op1)
 compileCall' "-" (op1:ops)       = foldM IR.sub op1 ops
+compileCall' "=" [op1,op2]       = IR.icmp IR.EQ op1 op2
 compileCall' "*" (op1:ops)       = foldM IR.mul op1 ops
 compileCall' "/" (op1:ops@(_:_)) = foldM IR.udiv op1 ops
+compileCall' "or" (op1:ops)      = foldM IR.or op1 ops
 compileCall' "print" [op1]       = print' op1
 compileCall' n ops                 = do
   let name = fromString $ T.unpack n
   hasFunc <- containsFunc name
-  unless hasFunc (error . T.unpack $ n <> "not implimented")
+  unless hasFunc (error . T.unpack $ n <> " not implimented")
   f <- getFunc name
   IR.call f (map (,[]) ops)

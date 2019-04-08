@@ -11,6 +11,11 @@ import           Text.Parsec.Text
 slAInt :: Parser SLExpr
 slAInt = SLInt <$> PN.int
 
+slBool :: Parser SLExpr
+slBool = SLBool <$>
+  (try (string "true" >> return True)
+   <|> try (string "false" >> return False))
+
 parse :: String -> T.Text -> SLProgram
 parse fname input = let res = runParser slProg () fname input
                         in case res of
@@ -21,7 +26,7 @@ slASymbol :: Parser SLExpr
 slASymbol = SLSymbol . T.pack <$> symbol
 
 symbol :: Parser String
-symbol = ((:[]) <$> oneOf "+-*/") <|> (many1 letter <> many alphaNum)
+symbol = ((:[]) <$> oneOf "=+-*/") <|> (many1 letter <> many alphaNum)
 
 escape :: Parser String
 escape = do
@@ -44,6 +49,7 @@ slString = SLString . T.pack <$> parseString
 slAtom :: Parser SLExpr
 slAtom =
   try slAInt  -- if sign is matched, this will fail, so use `try`
+  <|> try slBool  -- if sign is matched, this will fail, so use `try`
   <|> slString
   <|> slASymbol
 

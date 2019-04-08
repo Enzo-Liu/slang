@@ -11,6 +11,7 @@ data SLExpr =
   | SLCall Symbol Params
   | SLIf SLExpr SLExpr SLExpr
   | SLSymbol T.Text
+  | SLBool Bool
   | SLInt Int
   | SLString T.Text
   deriving Show
