@@ -51,6 +51,7 @@ github.com/AlDanial/cloc v 1.80  T=0.02 s (717.0 files/s, 22833.8 lines/s)
 
 ** step two
 - [X] add top level function define
+- [X] support more types, such as =bool=, =string=
 - [-] add more primitive functions
   - [X] add print primitive
   - [ ] export more from stdio/libc
