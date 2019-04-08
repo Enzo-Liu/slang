@@ -58,11 +58,12 @@ github.com/AlDanial/cloc v 1.80  T=0.02 s (717.0 files/s, 22833.8 lines/s)
   - [X] support if
   - [X] support recursive call 
   - [X] impliment fib in =slang=
+- [ ] fix bug about multiple =if= block 
 - [ ] add =sli= support (repl)
 - [ ] module and namespaces
-- [ ] fix bug about multiple =if= block 
 
 ** step three
+- [ ] string const using intern symbol pool 
 - [ ] add more control flow
 - [ ] add more types, =double=, =char=, =bool=, =string=
 - [ ] jit (mostly already supported by llvm)
