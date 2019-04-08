@@ -54,12 +54,13 @@ github.com/AlDanial/cloc v 1.80  T=0.02 s (717.0 files/s, 22833.8 lines/s)
 - [-] add more primitive functions
   - [X] add print primitive
   - [ ] export more from stdio/libc
-- [-] support if and recursive call
+- [X] support if and recursive call
   - [X] support if
-  - [ ] support recursive call 
-  - [ ] impliment fib in =slang=
+  - [X] support recursive call 
+  - [X] impliment fib in =slang=
 - [ ] add =sli= support (repl)
 - [ ] module and namespaces
+- [ ] fix bug about multiple =if= block 
 
 ** step three
 - [ ] add more control flow
