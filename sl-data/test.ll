@@ -6,7 +6,7 @@ source_filename = "<string>"
 @strFormat = unnamed_addr constant [4 x i8] c"%s\0A\00"
 @const-str1 = unnamed_addr constant [8 x i8] c"end fib\00"
 @strFormat.1 = unnamed_addr constant [4 x i8] c"%s\0A\00"
-@const-str2 = unnamed_addr constant [16 x i8] c"in if: test sdf\00"
+@const-str2 = unnamed_addr constant [17 x i8] c"in if: \22test sdf\00"
 @strFormat.2 = unnamed_addr constant [4 x i8] c"%s\0A\00"
 @const-str3 = unnamed_addr constant [13 x i8] c"in else: sdf\00"
 @strFormat.3 = unnamed_addr constant [4 x i8] c"%s\0A\00"
@@ -78,7 +78,7 @@ if-entry:                                         ; preds = %main-entry
   br i1 %17, label %if-then, label %if-else
 
 if-then:                                          ; preds = %if-entry
-  %18 = getelementptr inbounds [16 x i8], [16 x i8]* @const-str2, i32 0, i32 0
+  %18 = getelementptr inbounds [17 x i8], [17 x i8]* @const-str2, i32 0, i32 0
   %19 = getelementptr inbounds [4 x i8], [4 x i8]* @strFormat.3, i32 0, i32 0
   %20 = call i32 (i8*, ...) @printf(i8* %19, i8* %18)
   br label %if-exit

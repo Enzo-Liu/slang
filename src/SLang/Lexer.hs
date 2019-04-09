@@ -30,9 +30,9 @@ symbol = ((:[]) <$> oneOf "=+-*/") <|> (many1 letter <> many alphaNum)
 
 escape :: Parser String
 escape = do
-    d <- char '\\'
+    _ <- char '\\'
     c <- oneOf "\\\"0nrvtbf" -- all the characters which can be escaped
-    return [d, c]
+    return [c]
 
 nonEscape :: Parser Char
 nonEscape = noneOf "\\\"\0\n\r\v\t\b\f"

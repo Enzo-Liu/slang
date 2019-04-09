@@ -9,6 +9,6 @@
 (print "end fib")
 (defun b (c d) (/ c d (- c d)))
 (+ 1123 (b 3000 4002) (/ 23 30) (* 7 8 9 1 ) (+ 1) )
-(if true (print "in if: test sdf") (print "in else: sdf"))
+(if true (print "in if: \"test sdf") (print "in else: sdf"))
 (putInt32 (/ 2 3))
 (+ 3 4)
