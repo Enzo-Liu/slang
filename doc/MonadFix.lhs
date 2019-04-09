@@ -11,6 +11,15 @@ First, when not in monad, it looks like this:
 > fix :: (a -> a) -> a
 > fix f = f (fix f)
 
+why is this useful. (For someone familiar with Y-combinator, it may seems easy)
+
+> fac :: (Integer -> Integer) -> Integer -> Integer
+> fac _ 1 = 1               -- Fixed point case
+> fac f x = x * f (x - 1)
+> fac' = fix fac
+
+and =fac'= is the real fac function
+
 it means fix-point of the specified function. (and when it's not fix, it will loop forever)
 
 what about in monad context. we could first look in =maybe=.
