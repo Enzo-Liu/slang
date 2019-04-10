@@ -28,6 +28,7 @@ slASymbol = SLSymbol . T.pack <$> symbol
 symbol :: Parser String
 symbol = ((:[]) <$> oneOf "=+-*/") <|> (many1 letter <> many alphaNum)
 
+-- TODO: fix quoted string
 escape :: Parser String
 escape = do
     d <- char '\\'
