@@ -98,7 +98,7 @@ compile' (SLFunction f args' body) = do
     -- the last value as function returns
     IR.ret $ results !! (length results - 1)
 
--- todo , not only search for local reference, global too
+-- TODO: not only search for local reference, global too
 compile' (SLSymbol s) = (M.! (fromString $ T.unpack s) ) <$> gets argMap
 
 compile' (SLIf flagExpr thenBody elseBody)  = mdo
