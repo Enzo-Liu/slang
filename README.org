@@ -23,7 +23,7 @@ curl -sSL https://get.haskellstack.org/ | sh
 6. it will have both a [[https://en.wikipedia.org/wiki/Compiled_language][compiler]] and a [[https://en.wikipedia.org/wiki/Interpreted_language][interpreter]]
 7. it will have [[https://en.wikipedia.org/wiki/Coroutine][coroutine]] and [[https://en.wikipedia.org/wiki/Continuation][Continuation]]
 8. it's syntax will first be like =lisp=
-   - maybe latter can be like haskell, I this it's beautify, but =sexp= is very simple...
+   - maybe latter can be like =haskell= (it's beautify), but =sexp= is much simpler...
 
    
 ** how to run
