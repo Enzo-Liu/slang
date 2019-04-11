@@ -18,7 +18,13 @@ curl -sSL https://get.haskellstack.org/ | sh
 1. it will not have [[https://en.wikipedia.org/wiki/Immutable_object][mutable state]]
 2. it will be [[https://en.wikipedia.org/wiki/Strong_and_weak_typing][strongly-typed languange]]
 3. it will have [[https://en.wikipedia.org/wiki/Hindley%E2%80%93Milner_type_system][Hindley–Milner type system]]
-4. it can be compiled to machine code or directly interpreted
+4. it will have a [[https://en.wikipedia.org/wiki/Runtime_system][runtime environment]]
+5. it will have a [[https://en.wikipedia.org/wiki/Garbage_collection_(computer_science)][Garbage collector]]
+6. it will have both a [[https://en.wikipedia.org/wiki/Compiled_language][compiler]] and a [[https://en.wikipedia.org/wiki/Interpreted_language][interpreter]]
+7. it will have [[https://en.wikipedia.org/wiki/Coroutine][coroutine]] and [[https://en.wikipedia.org/wiki/Continuation][Continuation]]
+8. it's syntax will first be like =lisp=
+   - maybe latter can be like haskell, I this it's beautify, but =sexp= is very simple...
+
    
 ** how to run
 #+BEGIN_SRC bash
