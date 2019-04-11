@@ -14,7 +14,12 @@ curl -sSL https://get.haskellstack.org/ | sh
 ** the compile process 
 
 **.sl -> haskell-ast -> llvm ir -> all the format llvm supports
-
+** design
+1. it will not have mutable state
+2. it will be strong-typed languange
+3. it will have [[Hindley–Milner type system][https://en.wikipedia.org/wiki/Hindley%E2%80%93Milner_type_system]
+4. it can be compiled to machine code or directly interpreted
+   
 ** how to run
 #+BEGIN_SRC bash
   stack build
@@ -52,34 +57,40 @@ github.com/AlDanial/cloc v 1.80  T=0.02 s (717.0 files/s, 22833.8 lines/s)
 ** step two
 - [X] add top level function define
 - [X] support more types, such as =bool=, =string=
-- [-] add more primitive functions
+- [X] add more primitive functions
   - [X] add print primitive
-  - [ ] export more from stdio/libc
 - [X] support if and recursive call
   - [X] support if
   - [X] support recursive call 
   - [X] impliment fib in =slang=
-- [ ] fix bug about multiple =if= block 
+- [X] fix bug about multiple =if= block 
+- [ ] value definition and first class lambda-expression as value 
+- [ ] like =lisp-1=, single environment that maps symbols to values
+- [ ] local and global values
 - [ ] add =sli= support (repl)
 - [ ] module and namespaces
+- [ ] export more funtion from stdio/libc
 
 ** step three
 - [ ] string const using intern symbol pool 
 - [ ] add more control flow
-- [ ] add more types, =double=, =char=, =bool=, =string=
+- [ ] add more types, =double=, =char=, =bool=, =string=, and user-defined structures
 - [ ] jit (mostly already supported by llvm)
 - [ ] explore optimations supported by llvm
 
 ** step four
 - [ ] experiment =type= system and other fantastical possibilities
 - [ ] runtime system
+- [ ] hm-type system
 - [ ] lock, thread, so on...
 - [ ] network support
 
 ** step five
-- [ ] gc...  
+- [ ] type-checker
 - [ ] coroutine
 - [ ] continuation
+- [ ] language level macro
+- [ ] gc...  
 
 Seems a long way to go
 
