@@ -15,9 +15,9 @@ curl -sSL https://get.haskellstack.org/ | sh
 
 **.sl -> haskell-ast -> llvm ir -> all the format llvm supports
 ** design
-1. it will not have mutable state
-2. it will be strong-typed languange
-3. it will have [[Hindley–Milner type system][https://en.wikipedia.org/wiki/Hindley%E2%80%93Milner_type_system]
+1. it will not have [[https://en.wikipedia.org/wiki/Immutable_object][mutable state]]
+2. it will be [[https://en.wikipedia.org/wiki/Strong_and_weak_typing][strongly-typed languange]]
+3. it will have [[https://en.wikipedia.org/wiki/Hindley%E2%80%93Milner_type_system][Hindley–Milner type system]]
 4. it can be compiled to machine code or directly interpreted
    
 ** how to run
