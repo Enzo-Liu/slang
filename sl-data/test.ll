@@ -6,7 +6,7 @@ source_filename = "<string>"
 @strFormat = unnamed_addr constant [4 x i8] c"%s\0A\00"
 @const-str1 = unnamed_addr constant [8 x i8] c"end fib\00"
 @strFormat.1 = unnamed_addr constant [4 x i8] c"%s\0A\00"
-@const-str2 = unnamed_addr constant [17 x i8] c"in if: \22test sdf\00"
+@const-str2 = unnamed_addr constant [18 x i8] c"in if: \5C\22test sdf\00"
 @strFormat.2 = unnamed_addr constant [4 x i8] c"%s\0A\00"
 @const-str3 = unnamed_addr constant [13 x i8] c"in else: sdf\00"
 @strFormat.3 = unnamed_addr constant [4 x i8] c"%s\0A\00"
@@ -24,15 +24,24 @@ define i32 @fib(i32 %n) {
 
 if-entry:                                         ; preds = %0
   %1 = icmp eq i32 %n, 0
-  %2 = icmp eq i32 %n, 1
-  %3 = or i1 %1, %2
-  %4 = icmp eq i1 %3, true
-  br i1 %4, label %if-then, label %if-else
+  %2 = icmp eq i1 %1, true
+  br i1 %2, label %if-then, label %if-else
 
 if-then:                                          ; preds = %if-entry
-  br label %if-exit
+  br label %if-exit1
 
 if-else:                                          ; preds = %if-entry
+  br label %if-entry1
+
+if-entry1:                                        ; preds = %if-else
+  %3 = icmp eq i32 %n, 1
+  %4 = icmp eq i1 %3, true
+  br i1 %4, label %if-then1, label %if-else1
+
+if-then1:                                         ; preds = %if-entry1
+  br label %if-exit
+
+if-else1:                                         ; preds = %if-entry1
   %5 = sub i32 %n, 1
   %6 = call i32 @fib(i32 %5)
   %7 = sub i32 %n, 2
@@ -40,9 +49,13 @@ if-else:                                          ; preds = %if-entry
   %9 = add i32 %6, %8
   br label %if-exit
 
-if-exit:                                          ; preds = %if-else, %if-then
-  %10 = phi i32 [ 1, %if-then ], [ %9, %if-else ]
-  ret i32 %10
+if-exit:                                          ; preds = %if-else1, %if-then1
+  %10 = phi i32 [ 1, %if-then1 ], [ %9, %if-else1 ]
+  br label %if-exit1
+
+if-exit1:                                         ; preds = %if-exit, %if-then
+  %11 = phi i32 [ 1, %if-then ], [ %10, %if-exit ]
+  ret i32 %11
 }
 
 define i32 @b(i32 %c, i32 %d) {
@@ -78,7 +91,7 @@ if-entry:                                         ; preds = %main-entry
   br i1 %17, label %if-then, label %if-else
 
 if-then:                                          ; preds = %if-entry
-  %18 = getelementptr inbounds [17 x i8], [17 x i8]* @const-str2, i32 0, i32 0
+  %18 = getelementptr inbounds [18 x i8], [18 x i8]* @const-str2, i32 0, i32 0
   %19 = getelementptr inbounds [4 x i8], [4 x i8]* @strFormat.3, i32 0, i32 0
   %20 = call i32 (i8*, ...) @printf(i8* %19, i8* %18)
   br label %if-exit

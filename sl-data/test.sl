@@ -1,9 +1,12 @@
 (defun fib (n)
-  (if (or (= n 0) (= n 1))
-    1
-    (+ (fib (- n 1)) (fib (- n 2)))
+  (if (= n 0)
+      1
+    (if (= n 1)
+        1
+      (+ (fib (- n 1)) (fib (- n 2)))
+      )
+    )
   )
-)
 (print "fib 10 is : ")
 (putInt32 (fib 10))
 (print "end fib")

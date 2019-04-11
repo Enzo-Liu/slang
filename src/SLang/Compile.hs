@@ -111,14 +111,16 @@ compile' (SLIf flagExpr thenBody elseBody)  = mdo
 
   thenBlock <- IR.block `IR.named` "if-then"
   thenRet <- compile' thenBody
+  thenBlock' <- IR.currentBlock
   IR.br exitBlock
 
   elseBlock <- IR.block `IR.named` "if-else"
-  elseRet <- compile' elseBody
+  elseRet <- compile' elseBody  -- this may change the current block
+  elseBlock' <- IR.currentBlock
   IR.br exitBlock
 
   exitBlock <- IR.block `IR.named` "if-exit"
-  IR.phi [(thenRet, thenBlock), (elseRet, elseBlock)]
+  IR.phi [(thenRet, thenBlock'), (elseRet, elseBlock')]
 
 compile' (SLBool True)  = IR.bit 1
 compile' (SLBool False)  = IR.bit 0
