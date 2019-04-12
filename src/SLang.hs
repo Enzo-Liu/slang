@@ -1,7 +1,7 @@
 
 module SLang(parse,
              compile,
-             SLExpr(..)
+             SLProgram
             ) where
 
 import           SLang.Compile
