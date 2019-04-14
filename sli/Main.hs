@@ -8,6 +8,7 @@ import qualified Data.Text                as T
 import           Foreign.Ptr
 import           LLVM
 import qualified LLVM.AST                 as AST
+import qualified LLVM.AST.Global                 as ASTG
 import           LLVM.Context
 import qualified LLVM.ExecutionEngine     as EE
 import           LLVM.PassManager
@@ -31,7 +32,7 @@ passes = defaultCuratedPassSetSpec { optLevel = Just 3 }
 run :: FunPtr a -> IO ()
 run fn = haskFun (castFunPtr fn :: FunPtr (IO ()))
 
-runJIT :: AST.Module -> IO AST.Module
+runJIT :: AST.Module -> IO ()
 runJIT mod' =
   withContext $ \context ->
   jit context $ \executionEngine ->
@@ -41,26 +42,30 @@ runJIT mod' =
       EE.withModuleInEngine executionEngine m $ \ee -> do
         mainfn <- EE.getFunction ee "main"
         forM_ mainfn run
-        return mod'
 
 emptyModule :: BSS.ShortByteString -> AST.Module
 emptyModule label = AST.defaultModule { AST.moduleName = label }
 
-initModule :: AST.Module
-initModule = emptyModule "default slang repl"
-
-codegen :: AST.Module -> SLProgram -> IO AST.Module
-codegen mod' program = runJIT newMod
+codegen :: AST.Module -> SLProgram -> CodegenState -> IO (AST.Module, CodegenState)
+codegen mod' program state = runJIT newMod >> return (newMod, codegenState)
   where
-    modn    = compile program
+    (modn, codegenState)    = compileWithState program state
     newMod  = mod' {AST.moduleDefinitions =
-                    AST.moduleDefinitions mod' ++ AST.moduleDefinitions modn}
+                    (filterMain $AST.moduleDefinitions mod') ++ AST.moduleDefinitions modn}
+
+filterMain :: [AST.Definition] -> [AST.Definition]
+filterMain = filter notMain
+
+notMain :: AST.Definition -> Bool
+notMain (AST.GlobalDefinition (AST.Function{ASTG.name = n})) =
+  n /= AST.Name "main"
+notMain _ = True
 
 main :: IO ()
 main = runInputT defaultSettings (loop initModule)
   where
-    loop :: AST.Module -> InputT IO ()
-    loop mod' = do
+    loop :: (AST.Module, CodegenState) -> InputT IO ()
+    loop (mod', state) = do
       minput <- getInputLine "SL> "
       case minput of
         Nothing -> return ()
@@ -68,4 +73,4 @@ main = runInputT defaultSettings (loop initModule)
         Just input -> do
           let f = "interperter"
               prog = parse f (T.pack input)
-          lift (codegen mod' prog) >>= loop
+          lift (codegen mod' prog state) >>= loop

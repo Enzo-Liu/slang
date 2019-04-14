@@ -22,6 +22,7 @@ import qualified LLVM.IRBuilder.Instruction as IR
 import qualified LLVM.IRBuilder.Module      as IR
 import qualified LLVM.IRBuilder.Monad       as IR
 
+-- to suppport inscrement build, this should contains all the info needed
 data CodegenState = CodegenState {
   primFuncMap :: M.Map Name Operand,
   argMap      :: M.Map Name Operand
@@ -33,12 +34,12 @@ newtype Codegen a = Codegen { runCodegen :: State CodegenState a }
 emptyCodegen :: CodegenState
 emptyCodegen = CodegenState M.empty M.empty
 
-execCodegen :: Codegen Module -> Module
-execCodegen m = evalState (runCodegen m) emptyCodegen
+execCodegen :: Codegen Module -> CodegenState -> (Module, CodegenState)
+execCodegen m = runState (runCodegen m) 
 
 type CodeBuilder a = IR.IRBuilderT (IR.ModuleBuilderT Codegen) a
 
-execCodeBuilder :: CodeBuilder a -> Module
+execCodeBuilder :: CodeBuilder a -> CodegenState -> (Module, CodegenState)
 execCodeBuilder cb =
   execCodegen $ IR.buildModuleT "slang.ll" (IR.execIRBuilderT IR.emptyIRBuilder cb)
 
@@ -71,11 +72,14 @@ putInt32Name = "putInt32"
 printfName :: Name
 printfName = "printf"
 
-compile :: SLProgram -> Module
-compile (SLProgram exprs) = execCodeBuilder $ mdo
+initModule :: (Module, CodegenState)
+initModule = flip execCodeBuilder emptyCodegen $ do
   _ <- externVarArgs printfName [ptr i8] AST.i32
-  _ <- function putInt32Name [(i32, "a")] AST.i32 $ \ops ->
+  function putInt32Name [(i32, "a")] AST.i32 $ \ops ->
     putsInt (head ops) >>= IR.ret
+
+compileWithState :: SLProgram -> CodegenState -> (Module, CodegenState)
+compileWithState (SLProgram exprs ) codegenState = flip execCodeBuilder codegenState $ mdo
   let defs = filter isDefun exprs
       instructions = filter (not . isDefun) exprs
   mapM_ compile' defs
@@ -84,6 +88,10 @@ compile (SLProgram exprs) = execCodeBuilder $ mdo
     mapM_ compile' instructions
     ret <- IR.int32 0
     IR.ret ret
+
+
+compile :: SLProgram -> (Module, CodegenState)
+compile prog = compileWithState prog emptyCodegen
 
 compile' :: SLExpr -> CodeBuilder Operand
 compile' (SLFunction f args' body) = do

@@ -18,7 +18,7 @@ main = do
   let f = head args
   content <- T.readFile f
   let expr = parse f content
-      astModule = compile expr
+      astModule = fst $ compile expr
       (fname, _) = T.breakOnEnd "." (T.pack f)
       targetFile = T.unpack (T.dropEnd 1 fname) <> ".ll"
   removeIfExists targetFile

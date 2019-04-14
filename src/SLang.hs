@@ -1,7 +1,11 @@
 
 module SLang(parse,
              compile,
-             SLProgram
+             SLProgram,
+             CodegenState,
+             emptyCodegen,
+             compileWithState,
+             initModule
             ) where
 
 import           SLang.Compile
