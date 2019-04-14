@@ -70,10 +70,10 @@ github.com/AlDanial/cloc v 1.80  T=0.02 s (717.0 files/s, 22833.8 lines/s)
   - [X] support recursive call 
   - [X] impliment fib in =slang=
 - [X] fix bug about multiple =if= block 
+- [X] add =sli= support (repl)
 - [ ] value definition and first class lambda-expression as value 
 - [ ] like =lisp-1=, single environment that maps symbols to values
 - [ ] local and global values
-- [ ] add =sli= support (repl)
 - [ ] module and namespaces
 - [ ] export more funtion from stdio/libc
 
