@@ -9,6 +9,7 @@ import           SLang.Expr
 
 import           Control.Monad
 import           Control.Monad.State
+import qualified Data.ByteString.Short      as BSS
 import           Data.String
 import           LLVM.AST                   hiding (function)
 import           LLVM.AST.Type              as AST
@@ -72,6 +73,9 @@ putInt32Name = "putInt32"
 printfName :: Name
 printfName = "printf"
 
+block :: BSS.ShortByteString -> CodeBuilder Name
+block = (IR.block `IR.named`)
+
 initModule :: (Module, CodegenState)
 initModule = flip execCodeBuilder emptyCodegen $ do
   _ <- externVarArgs printfName [ptr i8] AST.i32
@@ -84,7 +88,7 @@ compileWithState (SLProgram exprs ) codegenState = flip execCodeBuilder codegenS
       instructions = filter (not . isDefun) exprs
   mapM_ compile' defs
   function "main" [] i32 $ \_ -> do
-    _ <- IR.block `IR.named` "main-entry"
+    _ <- block "main-entry"
     mapM_ compile' instructions
     ret <- IR.int32 0
     IR.ret ret
@@ -111,23 +115,23 @@ compile' (SLSymbol s) = (M.! (fromString $ T.unpack s) ) <$> gets localArgMap
 
 compile' (SLIf flagExpr thenBody elseBody)  = mdo
   IR.br entry
-  entry <- IR.block `IR.named` "if-entry"
+  entry <- block "if-entry"
   flag <- compile' flagExpr
   true <- IR.bit 1
   branch <- IR.icmp IR.EQ flag true
   IR.condBr branch thenBlock elseBlock
 
-  thenBlock <- IR.block `IR.named` "if-then"
+  thenBlock <- block "if-then"
   thenRet <- compile' thenBody
   thenBlock' <- IR.currentBlock
   IR.br exitBlock
 
-  elseBlock <- IR.block `IR.named` "if-else"
+  elseBlock <- block "if-else"
   elseRet <- compile' elseBody  -- this may change the current block
   elseBlock' <- IR.currentBlock
   IR.br exitBlock
 
-  exitBlock <- IR.block `IR.named` "if-exit"
+  exitBlock <- block "if-exit"
   IR.phi [(thenRet, thenBlock'), (elseRet, elseBlock')]
 
 compile' (SLBool True)  = IR.bit 1
