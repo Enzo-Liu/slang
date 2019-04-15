@@ -25,7 +25,7 @@ import qualified LLVM.IRBuilder.Monad       as IR
 -- to suppport inscrement build, this should contains all the info needed
 data CodegenState = CodegenState {
   primFuncMap :: M.Map Name Operand,
-  argMap      :: M.Map Name Operand
+  localArgMap :: M.Map Name Operand
                                  }
 
 newtype Codegen a = Codegen { runCodegen :: State CodegenState a }
@@ -35,7 +35,7 @@ emptyCodegen :: CodegenState
 emptyCodegen = CodegenState M.empty M.empty
 
 execCodegen :: Codegen Module -> CodegenState -> (Module, CodegenState)
-execCodegen m = runState (runCodegen m) 
+execCodegen m = runState (runCodegen m)
 
 type CodeBuilder a = IR.IRBuilderT (IR.ModuleBuilderT Codegen) a
 
@@ -99,15 +99,15 @@ compile' (SLFunction f args' body) = do
       paramTypes = map (\n -> (i32, fromString $ T.unpack n)) args'
   containsFunc name >>= (`when` error "conflict function name")
   function name paramTypes i32 $ \ops -> do
-    lastArgMap <- gets argMap
-    modify (\s -> s {argMap = toArgMap ops})
+    lastArgMap <- gets localArgMap
+    modify (\s -> s {localArgMap = toArgMap ops})
     results <- mapM compile' body
-    modify (\s -> s {argMap = lastArgMap})
+    modify (\s -> s {localArgMap = lastArgMap})
     -- the last value as function returns
     IR.ret $ results !! (length results - 1)
 
 -- TODO: not only search for local reference, global too
-compile' (SLSymbol s) = (M.! (fromString $ T.unpack s) ) <$> gets argMap
+compile' (SLSymbol s) = (M.! (fromString $ T.unpack s) ) <$> gets localArgMap
 
 compile' (SLIf flagExpr thenBody elseBody)  = mdo
   IR.br entry
