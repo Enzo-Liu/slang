@@ -102,7 +102,13 @@ compileWithState (SLProgram exprs ) codegenState = flip execCodeBuilder codegenS
 
 
 compile :: SLProgram -> (Module, CodegenState)
-compile prog = compileWithState prog emptyCodegen
+compile prog = (newMod, result)
+  where (initMod, initState) = initModule
+        (complied, result) = compileWithState prog initState
+        newMod  = initMod {moduleDefinitions =
+                           moduleDefinitions initMod ++
+                           moduleDefinitions complied
+                          }
 
 compile' :: SLExpr -> CodeBuilder Operand
 compile' (SLDefine sym inst) = instGlobal n (compile' inst)
