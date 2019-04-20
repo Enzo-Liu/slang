@@ -14,6 +14,7 @@ data SLExpr =
   | SLBool Bool
   | SLInt Int
   | SLString T.Text
+  | SLDefine Symbol SLExpr
   deriving Show
 
 newtype SLProgram = SLProgram [SLExpr] deriving Show

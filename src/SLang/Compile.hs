@@ -10,6 +10,7 @@ import           SLang.Expr
 import           Control.Monad
 import           Control.Monad.State
 import qualified Data.ByteString.Short      as BSS
+import           Data.Maybe
 import           Data.String
 import           LLVM.AST                   hiding (function)
 import           LLVM.AST.Type              as AST
@@ -26,14 +27,15 @@ import qualified LLVM.IRBuilder.Monad       as IR
 -- to suppport inscrement build, this should contains all the info needed
 data CodegenState = CodegenState {
   primFuncMap :: M.Map Name Operand,
-  localArgMap :: M.Map Name Operand
+  localArgMap :: M.Map Name Operand,
+  globalArgMap :: M.Map Name (CodeBuilder Operand)
                                  }
 
 newtype Codegen a = Codegen { runCodegen :: State CodegenState a }
   deriving (Functor, Applicative, Monad, MonadFix, MonadState CodegenState )
 
 emptyCodegen :: CodegenState
-emptyCodegen = CodegenState M.empty M.empty
+emptyCodegen = CodegenState M.empty M.empty M.empty
 
 execCodegen :: Codegen Module -> CodegenState -> (Module, CodegenState)
 execCodegen m = runState (runCodegen m)
@@ -60,6 +62,11 @@ instPrim :: Name -> Operand -> CodeBuilder Operand
 instPrim n op = do
   modify $ \s -> s{primFuncMap = M.insert n op (primFuncMap s)}
   return op
+
+instGlobal :: Name -> CodeBuilder Operand -> CodeBuilder Operand
+instGlobal n op = do
+  modify $ \s -> s{globalArgMap = M.insert n op (globalArgMap s)}
+  op
 
 getFunc :: Name -> CodeBuilder Operand
 getFunc n = gets $ (M.! n) . primFuncMap
@@ -98,6 +105,8 @@ compile :: SLProgram -> (Module, CodegenState)
 compile prog = compileWithState prog emptyCodegen
 
 compile' :: SLExpr -> CodeBuilder Operand
+compile' (SLDefine sym inst) = instGlobal n (compile' inst)
+  where n = mkName $ T.unpack sym
 compile' (SLFunction f args' body) = do
   let name = mkName $ T.unpack f
       paramTypes = map (\n -> (i32, fromString $ T.unpack n)) args'
@@ -110,8 +119,20 @@ compile' (SLFunction f args' body) = do
     -- the last value as function returns
     IR.ret $ results !! (length results - 1)
 
--- TODO: not only search for local reference, global too
-compile' (SLSymbol s) = (M.! (fromString $ T.unpack s) ) <$> gets localArgMap
+compile' (SLSymbol s) = do
+  lv <- localValue
+  gv <- globalValue
+  return . head . catMaybes $ [lv, gv, error "no binded value"]
+  where
+    name = fromString $ T.unpack s
+    localValue :: CodeBuilder (Maybe Operand)
+    localValue = gets $ M.lookup name . localArgMap
+    globalValue :: CodeBuilder (Maybe Operand)
+    globalValue = do
+     g <- gets $ M.lookup name . globalArgMap
+     case g of
+       Nothing -> return Nothing
+       Just b  -> Just <$> b
 
 compile' (SLIf flagExpr thenBody elseBody)  = mdo
   IR.br entry

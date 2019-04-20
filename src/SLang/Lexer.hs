@@ -23,10 +23,11 @@ parse fname input = let res = runParser slProg () fname input
                              Right r  -> r
 
 slASymbol :: Parser SLExpr
-slASymbol = SLSymbol . T.pack <$> symbol
+slASymbol = SLSymbol <$> symbol
 
-symbol :: Parser String
-symbol = ((:[]) <$> oneOf "=+-*/") <|> (many1 letter <> many alphaNum)
+symbol :: Parser T.Text
+symbol = T.pack <$> strSymbol
+  where strSymbol = ((:[]) <$> oneOf "=+-*/") <|> (many1 letter <> many alphaNum)
 
 -- TODO: fix quoted string
 escape :: Parser String
@@ -58,21 +59,19 @@ slExprComposite :: Parser SLExpr
 slExprComposite = between (char '(') (char ')') insideExprs
 
 insideExprs :: Parser SLExpr
-insideExprs = do
-  sym <- symbol
-  parseBySym $ T.pack sym
-
-tSymbol :: Parser T.Text
-tSymbol = fmap T.pack symbol
+insideExprs = symbol >>= parseBySym
 
 parseBySym :: T.Text -> Parser SLExpr
 parseBySym "defun" = SLFunction <$>
-  (spaces *> tSymbol) <*>
+  (spaces *> symbol) <*>
   (spaces *> args) <*>
   (spaces *> funcBody)
 parseBySym "if" = SLIf <$>
   (spaces *> slExpr) <*>
   (spaces *> slExpr) <*>
+  (spaces *> slExpr)
+parseBySym "define" = SLDefine <$>
+  (spaces *> symbol) <*>
   (spaces *> slExpr)
 parseBySym n       = SLCall n <$> many slExpr
 
@@ -80,7 +79,7 @@ withBrackets :: Parser a -> Parser a
 withBrackets = between (char '(') (char ')')
 
 args :: Parser Args
-args = withBrackets $ tSymbol `sepBy` spaces
+args = withBrackets $ symbol `sepBy` spaces
 
 funcBody :: Parser [SLExpr]
 funcBody = slExpr `sepBy1` spaces
