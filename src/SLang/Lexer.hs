@@ -73,6 +73,9 @@ parseBySym "if" = SLIf <$>
 parseBySym "define" = SLDefine <$>
   (spaces *> symbol) <*>
   (spaces *> slExpr)
+parseBySym "lambda" = SLLambda <$>
+  (spaces *> args) <*>
+  (spaces *> funcBody)
 parseBySym n       = SLCall n <$> many slExpr
 
 withBrackets :: Parser a -> Parser a

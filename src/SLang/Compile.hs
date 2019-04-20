@@ -69,10 +69,25 @@ instGlobal n op = do
   op
 
 getFunc :: Name -> CodeBuilder Operand
-getFunc n = gets $ (M.! n) . primFuncMap
+getFunc n = do
+  fv <- funcValue
+  gv <- globalValue
+  return . head . catMaybes $ [fv, gv, error "no binded value"]
+  where
+    funcValue :: CodeBuilder (Maybe Operand)
+    funcValue = gets $ M.lookup n . primFuncMap
+    globalValue :: CodeBuilder (Maybe Operand)
+    globalValue = do
+     g <- gets $ M.lookup n . globalArgMap
+     case g of
+       Nothing -> return Nothing
+       Just b  -> Just <$> b
 
 containsFunc :: Name -> CodeBuilder Bool
-containsFunc n = gets $ M.member n . primFuncMap
+containsFunc n = do
+  isFunc <- gets $ M.member n . primFuncMap
+  isLambda <- gets $ M.member n . globalArgMap
+  return $ isFunc || isLambda
 
 putInt32Name :: Name
 putInt32Name = "putInt32"
@@ -109,21 +124,28 @@ compile prog = (newMod, result)
                            moduleDefinitions initMod ++
                            moduleDefinitions complied
                           }
-
-compile' :: SLExpr -> CodeBuilder Operand
-compile' (SLDefine sym inst) = instGlobal n (compile' inst)
-  where n = mkName $ T.unpack sym
-compile' (SLFunction f args' body) = do
-  let name = mkName $ T.unpack f
-      paramTypes = map (\n -> (i32, fromString $ T.unpack n)) args'
-  containsFunc name >>= (`when` error "conflict function name")
-  function name paramTypes i32 $ \ops -> do
+compileLambda :: [Operand] -> [SLExpr] -> CodeBuilder ()
+compileLambda ops body = do
     lastArgMap <- gets localArgMap
     modify (\s -> s {localArgMap = toArgMap ops})
     results <- mapM compile' body
     modify (\s -> s {localArgMap = lastArgMap})
     -- the last value as function returns
     IR.ret $ results !! (length results - 1)
+
+compile' :: SLExpr -> CodeBuilder Operand
+compile' (SLLambda args' body) = do
+  let paramTypes = map (\n -> (i32, fromString $ T.unpack n)) args'
+  name <- IR.freshName "lambda"
+  function name paramTypes i32 (`compileLambda` body)
+
+compile' (SLDefine sym inst) = instGlobal n (compile' inst)
+  where n = mkName $ T.unpack sym
+compile' (SLFunction f args' body) = do
+  let name = mkName $ T.unpack f
+      paramTypes = map (\n -> (i32, fromString $ T.unpack n)) args'
+  containsFunc name >>= (`when` error "conflict function name")
+  function name paramTypes i32 (`compileLambda` body)
 
 compile' (SLSymbol s) = do
   lv <- localValue

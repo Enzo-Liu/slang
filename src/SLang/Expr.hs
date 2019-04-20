@@ -15,6 +15,7 @@ data SLExpr =
   | SLInt Int
   | SLString T.Text
   | SLDefine Symbol SLExpr
+  | SLLambda Args [SLExpr]
   deriving Show
 
 newtype SLProgram = SLProgram [SLExpr] deriving Show
