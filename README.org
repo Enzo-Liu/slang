@@ -72,10 +72,10 @@ github.com/AlDanial/cloc v 1.80  T=0.02 s (717.0 files/s, 22833.8 lines/s)
 - [X] fix bug about multiple =if= block 
 - [X] add =sli= support (repl)
 - [X] local and global values
-- [-] value definition and first class lambda-expression as value
+- [X] value definition and first class lambda-expression as value
   - [X] value definition
-  - [ ] first class lambda-expression
-- [ ] like =lisp-1=, single environment that maps symbols to values
+  - [X] first class lambda-expression
+- [X] like =lisp-1=, single environment that maps symbols to values
 - [ ] module and namespaces
 - [ ] export more funtion from stdio/libc
 
