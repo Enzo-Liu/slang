@@ -98,6 +98,7 @@ github.com/AlDanial/cloc v 1.80  T=0.02 s (717.0 files/s, 22833.8 lines/s)
 - [ ] coroutine
 - [ ] continuation
 - [ ] language level macro
+- [ ] auto concurrent (just like ghc...)
 - [ ] gc...  
 
 Seems a long way to go
