@@ -76,6 +76,7 @@ github.com/AlDanial/cloc v 1.80  T=0.02 s (717.0 files/s, 22833.8 lines/s)
   - [X] value definition
   - [X] first class lambda-expression
 - [X] like =lisp-1=, single environment that maps symbols to values
+- [ ] pattern match and rb tree
 - [ ] module and namespaces
 - [ ] export more funtion from stdio/libc
 
