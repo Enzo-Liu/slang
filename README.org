@@ -76,14 +76,14 @@ github.com/AlDanial/cloc v 1.80  T=0.02 s (717.0 files/s, 22833.8 lines/s)
   - [X] value definition
   - [X] first class lambda-expression
 - [X] like =lisp-1=, single environment that maps symbols to values
-- [ ] pattern match and rb tree
-- [ ] module and namespaces
-- [ ] export more funtion from stdio/libc
 
 ** step three
 - [ ] string const using intern symbol pool 
-- [ ] add more control flow
 - [ ] add more types, =double=, =char=, =bool=, =string=, and user-defined structures
+- [ ] module and namespaces
+- [ ] add more control flow
+- [ ] pattern match and rb tree
+- [ ] export more funtion from stdio/libc
 - [ ] jit (mostly already supported by llvm)
 - [ ] explore optimations supported by llvm
 
