@@ -79,7 +79,10 @@ github.com/AlDanial/cloc v 1.80  T=0.02 s (717.0 files/s, 22833.8 lines/s)
 
 ** step three
 - [ ] string const using intern symbol pool 
+- [ ] transform this interpreter to =CPS= style
 - [ ] add more types, =double=, =char=, =bool=, =string=, and user-defined structures
+- [ ] =exception=, using =try= , =catch=
+- [ ] =thread= , =mutex=
 - [ ] module and namespaces
 - [ ] add more control flow
 - [ ] pattern match and rb tree
