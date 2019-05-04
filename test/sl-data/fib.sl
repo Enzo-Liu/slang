@@ -12,6 +12,6 @@
 
 (putInt32 (fib n))
 
-(define plus1 (lambda (a) (+ a 1)))
-
 (putInt32 (plus1 100))
+
+(define plus1 (lambda (a) (+ a 1)))

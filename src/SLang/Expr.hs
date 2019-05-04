@@ -22,4 +22,5 @@ newtype SLProgram = SLProgram [SLExpr] deriving Show
 
 isDefun :: SLExpr -> Bool
 isDefun SLFunction{} = True
+isDefun SLDefine{}   = True
 isDefun _            = False

@@ -104,6 +104,18 @@ initModule = flip execCodeBuilder emptyCodegen $ do
   function putInt32Name [(i32, "a")] AST.i32 $ \ops ->
     putsInt (head ops) >>= IR.ret
 
+compile :: SLProgram -> (Module, CodegenState)
+compile prog = (newMod, result)
+  where (initMod, initState) = initModule
+        (complied, result) = compileWithState prog initState
+        newMod  = initMod {moduleDefinitions =
+                           moduleDefinitions initMod ++
+                           moduleDefinitions complied
+                          }
+
+-- TODO: top level
+-- when compile definitions, give then an cont
+-- when compile top-level instructions, the same
 compileWithState :: SLProgram -> CodegenState -> (Module, CodegenState)
 compileWithState (SLProgram exprs ) codegenState = flip execCodeBuilder codegenState $ mdo
   let defs = filter isDefun exprs
@@ -114,24 +126,6 @@ compileWithState (SLProgram exprs ) codegenState = flip execCodeBuilder codegenS
     mapM_ compile' instructions
     ret <- IR.int32 0
     IR.ret ret
-
-
-compile :: SLProgram -> (Module, CodegenState)
-compile prog = (newMod, result)
-  where (initMod, initState) = initModule
-        (complied, result) = compileWithState prog initState
-        newMod  = initMod {moduleDefinitions =
-                           moduleDefinitions initMod ++
-                           moduleDefinitions complied
-                          }
-compileLambda :: [Operand] -> [SLExpr] -> CodeBuilder ()
-compileLambda ops body = do
-    lastArgMap <- gets localArgMap
-    modify (\s -> s {localArgMap = toArgMap ops})
-    results <- mapM compile' body
-    modify (\s -> s {localArgMap = lastArgMap})
-    -- the last value as function returns
-    IR.ret $ results !! (length results - 1)
 
 compile' :: SLExpr -> CodeBuilder Operand
 compile' (SLLambda args' body) = do
@@ -225,3 +219,12 @@ compileCall' n ops                 = do
   unless hasFunc (error . T.unpack $ n <> " not implimented")
   f <- getFunc name
   IR.call f (map (,[]) ops)
+
+compileLambda :: [Operand] -> [SLExpr] -> CodeBuilder ()
+compileLambda ops body = do
+    lastArgMap <- gets localArgMap
+    modify (\s -> s {localArgMap = toArgMap ops})
+    results <- mapM compile' body
+    modify (\s -> s {localArgMap = lastArgMap})
+    -- the last value as function returns
+    IR.ret $ results !! (length results - 1)
