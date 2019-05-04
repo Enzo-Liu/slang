@@ -28,14 +28,30 @@ import qualified LLVM.IRBuilder.Monad       as IR
 data CodegenState = CodegenState {
   primFuncMap  :: M.Map Name Operand,
   localArgMap  :: M.Map Name Operand,
-  globalArgMap :: M.Map Name (CodeBuilder Operand)
+  globalArgMap :: M.Map Name (CodeBuilder Operand),
+  cont         :: Cont
                                  }
+
+newtype Cont = Cont (Operand -> CodeBuilder Operand)
+
+runCont :: Cont -> Operand -> CodeBuilder Operand
+runCont (Cont c) = c
+
+endCont :: Cont
+endCont = Cont return
+
+-- ifCont :: SLExpr -> SLExpr -> Cont -> Cont
+-- ifCont th el c = Cont $ \cond -> 
+--   IR.condBr cond th el
+
+runBuilderCont :: Operand -> CodeBuilder Operand
+runBuilderCont o = gets cont >>= flip runCont o
 
 newtype Codegen a = Codegen { runCodegen :: State CodegenState a }
   deriving (Functor, Applicative, Monad, MonadFix, MonadState CodegenState )
 
 emptyCodegen :: CodegenState
-emptyCodegen = CodegenState M.empty M.empty M.empty
+emptyCodegen = CodegenState M.empty M.empty M.empty endCont
 
 execCodegen :: Codegen Module -> CodegenState -> (Module, CodegenState)
 execCodegen m = runState (runCodegen m)
@@ -156,6 +172,7 @@ compile' (SLSymbol s) = do
        Nothing -> return Nothing
        Just b  -> Just <$> b
 
+-- TODO: generate if cont, and compile with that
 compile' (SLIf flagExpr thenBody elseBody)  = mdo
   IR.br entry
   entry <- block "if-entry"
@@ -182,7 +199,7 @@ compile' (SLBool False)  = IR.bit 0
 
 compile' (SLCall fn params)  = do
   ops <- mapM compile' params
-  compileCall' fn ops
+  compileCall' fn ops >>= runBuilderCont
 
 compile' (SLInt i)  = IR.int32 $ fromIntegral i
 -- string to i8 vector
