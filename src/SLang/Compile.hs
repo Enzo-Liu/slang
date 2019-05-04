@@ -28,7 +28,7 @@ import qualified LLVM.IRBuilder.Monad       as IR
 data CodegenState = CodegenState {
   primFuncMap  :: M.Map Name Operand,
   localArgMap  :: M.Map Name Operand,
-  globalArgMap :: M.Map Name (CodeBuilder Operand),
+  globalArgMap :: M.Map Name Operand,
   cont         :: Cont
                                  }
 
@@ -81,23 +81,15 @@ instPrim n op = do
 
 instGlobal :: Name -> CodeBuilder Operand -> CodeBuilder Operand
 instGlobal n op = do
-  modify $ \s -> s{globalArgMap = M.insert n op (globalArgMap s)}
-  op
+  op' <- op
+  modify $ \s -> s{globalArgMap = M.insert n op' (globalArgMap s)}
+  return op'
 
 getFunc :: Name -> CodeBuilder Operand
 getFunc n = do
-  fv <- funcValue
-  gv <- globalValue
+  fv <- funcValue n
+  gv <- globalValue n
   return . head . catMaybes $ [fv, gv, error "no binded value"]
-  where
-    funcValue :: CodeBuilder (Maybe Operand)
-    funcValue = gets $ M.lookup n . primFuncMap
-    globalValue :: CodeBuilder (Maybe Operand)
-    globalValue = do
-     g <- gets $ M.lookup n . globalArgMap
-     case g of
-       Nothing -> return Nothing
-       Just b  -> Just <$> b
 
 containsFunc :: Name -> CodeBuilder Bool
 containsFunc n = do
@@ -113,6 +105,15 @@ printfName = "printf"
 
 block :: BSS.ShortByteString -> CodeBuilder Name
 block = (IR.block `IR.named`)
+
+globalValue :: Name -> CodeBuilder (Maybe Operand)
+globalValue name = gets $ M.lookup name . globalArgMap
+
+localValue :: Name -> CodeBuilder (Maybe Operand)
+localValue name = gets $ M.lookup name . localArgMap
+
+funcValue :: Name -> CodeBuilder (Maybe Operand)
+funcValue n = gets $ M.lookup n . primFuncMap
 
 initModule :: (Module, CodegenState)
 initModule = flip execCodeBuilder emptyCodegen $ do
@@ -158,19 +159,11 @@ compile' (SLFunction f args' body) = do
   function name paramTypes i32 (`compileLambda` body)
 
 compile' (SLSymbol s) = do
-  lv <- localValue
-  gv <- globalValue
+  lv <- localValue name
+  gv <- globalValue name
   return . head . catMaybes $ [lv, gv, error "no binded value"]
   where
     name = fromString $ T.unpack s
-    localValue :: CodeBuilder (Maybe Operand)
-    localValue = gets $ M.lookup name . localArgMap
-    globalValue :: CodeBuilder (Maybe Operand)
-    globalValue = do
-     g <- gets $ M.lookup name . globalArgMap
-     case g of
-       Nothing -> return Nothing
-       Just b  -> Just <$> b
 
 -- TODO: generate if cont, and compile with that
 compile' (SLIf flagExpr thenBody elseBody)  = mdo

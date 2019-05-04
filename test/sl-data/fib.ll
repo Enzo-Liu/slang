@@ -55,16 +55,11 @@ define i32 @lambda(i32 %a) {
   ret i32 %1
 }
 
-define i32 @lambda.1(i32 %a) {
-  %1 = add i32 %a, 1
-  ret i32 %1
-}
-
 define i32 @main() {
 main-entry:
   %0 = call i32 @fib(i32 10)
   %1 = call i32 @putInt32(i32 %0)
-  %2 = call i32 @lambda.1(i32 100)
+  %2 = call i32 @lambda(i32 100)
   %3 = call i32 @putInt32(i32 %2)
   ret i32 0
 }
