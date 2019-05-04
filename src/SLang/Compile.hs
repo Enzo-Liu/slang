@@ -26,8 +26,8 @@ import qualified LLVM.IRBuilder.Monad       as IR
 
 -- to suppport inscrement build, this should contains all the info needed
 data CodegenState = CodegenState {
-  primFuncMap :: M.Map Name Operand,
-  localArgMap :: M.Map Name Operand,
+  primFuncMap  :: M.Map Name Operand,
+  localArgMap  :: M.Map Name Operand,
   globalArgMap :: M.Map Name (CodeBuilder Operand)
                                  }
 
